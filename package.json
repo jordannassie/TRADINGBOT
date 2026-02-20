@@ -3,6 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "mkdir -p dist && cat <<'EOF' > dist/index.html\n+<!doctype html>\n+<html lang=\"en\">\n+  <head>\n+    <meta charset=\"utf-8\" />\n+    <title>TradingBot</title>\n+  </head>\n+  <body>\n+    <p>This repository is scaffolded for Netlify/Supabase. Replace this placeholder with your real app.</p>\n+  </body>\n+</html>\n+EOF"
+    "build": "rm -rf dist && mkdir -p dist && cp -R src/. dist/"
   }
 }

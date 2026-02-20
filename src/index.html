@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TradingBot Control Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div>
+          <p class="brand-title">TradePulse</p>
+          <p class="brand-subtitle">Polymarket bot</p>
+        </div>
+      </div>
+      <nav>
+        <button class="nav-pill active">Dashboard</button>
+        <button class="nav-pill">Markets</button>
+        <button class="nav-pill">Signals</button>
+        <button class="nav-pill">Followers</button>
+        <button class="nav-pill">Settings</button>
+      </nav>
+      <div class="sidebar-footer">
+        <p>Next deploy</p>
+        <p class="mono">Live · Polymarkt 19</p>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-bar">
+        <div>
+          <p class="eyebrow">Live signal</p>
+          <h1>Polymarkets Trading Bot</h1>
+        </div>
+        <div class="status-pill">
+          <span class="pulse"></span>
+          Connected
+        </div>
+      </header>
+
+      <section class="grid overview">
+        <article class="metric-card">
+          <p class="metric-label">Account Equity</p>
+          <p class="metric-value">$606,494</p>
+          <p class="metric-sub">+18.6% vs. last 30 days</p>
+          <div class="sparkline" id="equity-spark"></div>
+        </article>
+        <article class="metric-card">
+          <p class="metric-label">Monthly ROI</p>
+          <p class="metric-value">62.38%</p>
+          <p class="metric-sub">Polymarkets leaderboard</p>
+          <div class="sparkline" id="roi-spark"></div>
+        </article>
+        <article class="metric-card">
+          <p class="metric-label">Followers</p>
+          <p class="metric-value">62.3K</p>
+          <p class="metric-sub">12.4K active</p>
+          <div class="metric-progress">
+            <div style="width: 74%"></div>
+          </div>
+        </article>
+        <article class="metric-card">
+          <p class="metric-label">Open Positions</p>
+          <p class="metric-value">$47.0K</p>
+          <p class="metric-sub">Avg. exposure: $6.4K</p>
+          <p class="metric-label top">Current bias</p>
+          <p class="metric-value top">Bullish</p>
+          <div class="signal-chip">Polymarket 1D odds 67%</div>
+        </article>
+      </section>
+
+      <section class="grid leaderboard">
+        <article class="card lg-card">
+          <header>
+            <div>
+              <p class="eyebrow">ROI trend</p>
+              <h2>Polymarkets snapshots</h2>
+            </div>
+            <div class="toggle-group">
+              <button data-range="1M" class="active">1M</button>
+              <button data-range="6M">6M</button>
+              <button data-range="1Y">1Y</button>
+            </div>
+          </header>
+          <div class="chart" id="roi-chart"></div>
+        </article>
+        <article class="card mini-card">
+          <p class="eyebrow">Followers</p>
+          <h3>Top supporters</h3>
+          <ul class="follower-list" id="followers"></ul>
+        </article>
+      </section>
+
+      <section class="grid trades-and-markets">
+        <article class="card trades-card">
+          <header>
+            <div>
+              <p class="eyebrow">Trading feed</p>
+              <h2>Latest Polymarket trades</h2>
+            </div>
+            <button class="ghost-btn">View live</button>
+          </header>
+          <div class="trade-header">
+            <span>Market</span>
+            <span>Entry</span>
+            <span>Value</span>
+            <span>PnL</span>
+          </div>
+          <div id="trade-rows"></div>
+        </article>
+        <article class="card fine print">
+          <h3>Performance summary</h3>
+          <p>$200.00 max drawdown</p>
+          <p>Stop-loss buffer: 3.2%</p>
+          <p>Avg. trade length: 38m</p>
+          <div class="status-grid">
+            <div>
+              <span>Completed</span>
+              <strong>1,218</strong>
+            </div>
+            <div>
+              <span>Following</span>
+              <strong>3,895</strong>
+            </div>
+            <div>
+              <span>Confidence</span>
+              <strong>87%</strong>
+            </div>
+          </div>
+          <p class="eyebrow">Wallet</p>
+          <h2 id="wallet-value">$1.24M</h2>
+          <p class="mono">Instance 473135 · Monitored 12/24h</p>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+
+</html>
