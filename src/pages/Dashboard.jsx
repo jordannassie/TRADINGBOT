@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useMemo } from 'react';
 import { useCopyList } from '../context/CopyListContext.jsx';
+import { useTradeFeed } from '../context/TradeFeedContext';
 import useLeaderboard from '../hooks/useLeaderboard.js';
 import { dailyPnL, equityCurve, leaderboard, openPositions } from '../data/analyticsMocks';
 import { fallbackTimeline } from '../data/signalsTimeline';
@@ -34,6 +35,7 @@ const TimelineItem = ({ event }) => (
 export default function Dashboard() {
   const { state } = useCopyList();
   const { status, error } = useLeaderboard();
+  const { dailyPnL: liveDailyPnL, equityCurve: liveTradeEquity, liveFeed } = useTradeFeed();
   const totalActive = state.active.length;
   const totalVetted = state.vetted.length;
   const signalsLogged = state.auditLog.length;
@@ -55,6 +57,11 @@ export default function Dashboard() {
   }, [state.auditLog]);
 
   const netPnL = dailyPnL.reduce((sum, bar) => sum + bar.value, 0);
+  const liveDailyValue = liveFeed.length ? liveDailyPnL : null;
+  const effectiveDaily = liveDailyValue ?? netPnL;
+  const hasLiveEquity = liveTradeEquity.length > 0;
+  const equityPoints = hasLiveEquity ? liveTradeEquity : equityCurve;
+  const maxEquityValue = Math.max(1, ...equityPoints.map((point) => Math.abs(point.value)));
   const killSwitchActive = state.riskControls?.killSwitchActive;
   const statusMessage =
     status === 'idle'
@@ -87,7 +94,9 @@ export default function Dashboard() {
         </article>
         <article className="glance-card">
           <p className="metric-label">Daily PnL</p>
-          <p className="metric-value">{netPnL >= 0 ? `+${netPnL.toLocaleString()}` : netPnL.toLocaleString()}</p>
+          <p className="metric-value">
+            {effectiveDaily >= 0 ? `+${effectiveDaily.toLocaleString()}` : effectiveDaily.toLocaleString()}
+          </p>
           <p className="metric-sub">Latest 14 days</p>
         </article>
         <article className="glance-card">
@@ -120,6 +129,16 @@ export default function Dashboard() {
         </Link>
       </section>
 
+      <section className="cta-banner">
+        <div>
+          <p className="eyebrow">Capital plan</p>
+          <h2>See our copy/arbitrage plan</h2>
+        </div>
+        <Link to="/strategy" className="primary-btn">
+          View strategy
+        </Link>
+      </section>
+
       <section className="grid analytics-grid">
         <article className="card chart-card">
           <div className="section-header">
@@ -130,13 +149,13 @@ export default function Dashboard() {
             <span className="fine">30-day mock history</span>
           </div>
           <div className="chart-sparkline" aria-label="Equity curve placeholder">
-            {equityCurve.map((value, index) => (
-              <span
-                key={`equity-${index}`}
-                style={{ height: `${(value.value / maxEquity) * 100}%` }}
-                aria-label={`Point ${index + 1}`}
-              />
-            ))}
+          {equityPoints.map((value, index) => (
+            <span
+              key={`equity-${index}`}
+              style={{ height: `${(value.value / maxEquityValue) * 100}%` }}
+              aria-label={`Point ${index + 1}`}
+            />
+          ))}
           </div>
           <p className="metric-sub">Historic mock to show slope before live tracking.</p>
         </article>
@@ -218,6 +237,35 @@ export default function Dashboard() {
             </table>
           </div>
         </article>
+      </section>
+
+      <section className="card live-feed-card">
+        <header className="section-header">
+          <div>
+            <p className="eyebrow">Live trade feed</p>
+            <h2>Last 5 fills</h2>
+          </div>
+        </header>
+        {liveFeed.length > 0 ? (
+          <ul className="live-feed-list">
+            {liveFeed.map((trade) => (
+              <li key={trade.id}>
+                <div>
+                  <strong>{trade.market}</strong>
+                  <span className="fine">
+                    {trade.side.toUpperCase()} · {trade.size} cards @ {trade.price.toFixed(3)}
+                  </span>
+                </div>
+                <span className={`live-feed-pnl ${trade.pnl >= 0 ? 'positive' : 'negative'}`}>
+                  {trade.pnl >= 0 ? '+' : ''}
+                  {trade.pnl.toFixed(2)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="fine">Waiting for live fills to appear.</p>
+        )}
       </section>
 
       <section className="card signals-preview">

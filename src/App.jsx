@@ -8,6 +8,7 @@ import Signals from './pages/Signals.jsx';
 import Results from './pages/Results.jsx';
 import Settings from './pages/Settings.jsx';
 import { CopyListProvider } from './context/CopyListContext.jsx';
+import { TradeFeedProvider } from './context/TradeFeedContext.tsx';
 
 const navItems = [
   { path: '/dashboard', label: 'Dashboard' },
@@ -22,6 +23,7 @@ const navItems = [
 export default function App() {
   return (
     <CopyListProvider>
+      <TradeFeedProvider>
       <Layout navItems={navItems}>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -35,6 +37,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Layout>
+      </TradeFeedProvider>
     </CopyListProvider>
   );
 }

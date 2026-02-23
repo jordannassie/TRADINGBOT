@@ -6,9 +6,11 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "simulate-copy": "node scripts/copySimulator.js"
+    "simulate-copy": "node scripts/copySimulator.js",
+    "bot:live": "node scripts/copySimulator.js --live"
   },
   "dependencies": {
+    "@polymarket/clob-client": "^5.2.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0"

@@ -1,3 +1,7 @@
+import { ClobClient, OrderType, Side } from '@polymarket/clob-client';
+import { SignatureType } from '@polymarket/order-utils';
+import { emitTradeFeed } from './tradeFeedBus';
+
 type PolymarketTraderProfile = {
   handle: string;
   address: string;
@@ -28,12 +32,17 @@ type PlaceOrderRequest = {
   marketId: string;
   orderSize: number;
   side: 'buy' | 'sell';
+  limitPrice?: number;
 };
 
 type PlaceOrderResult = {
   success: boolean;
   orderId: string;
   message: string;
+};
+
+type PlaceOrderOptions = {
+  killSwitchActive?: boolean;
 };
 
 const LEADERBOARD_ENDPOINT = 'https://clob.polymarket.com/trader-leaderboard';
@@ -43,6 +52,35 @@ const ORDER_BY = ['PNL', 'VOLUME'];
 const MOCK_DELAY_MS = 420;
 const LIVE_FEED_URL = new URL('../data/polymarketLiveFeed.json', import.meta.url);
 const FALLBACK_FEED_URL = new URL('../data/polymarketTopTraders.json', import.meta.url);
+
+const API_KEY = import.meta.env.VITE_POLY_API_KEY ?? '';
+const API_SECRET = import.meta.env.VITE_POLY_API_SECRET ?? '';
+const API_PASSPHRASE = import.meta.env.VITE_POLY_API_PASSPHRASE ?? '';
+const PROXY_WALLET = import.meta.env.VITE_POLY_PROXY_WALLET ?? '';
+
+const hasLiveCreds = Boolean(API_KEY && API_SECRET && API_PASSPHRASE && PROXY_WALLET);
+
+const polymarketClient = hasLiveCreds
+  ? new ClobClient(
+      'https://clob.polymarket.com',
+      1,
+      undefined,
+      {
+        key: API_KEY,
+        secret: API_SECRET,
+        passphrase: API_PASSPHRASE,
+      },
+      SignatureType.ProxyWallet,
+      PROXY_WALLET,
+      undefined,
+      true,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      true,
+    )
+  : null;
 
 const smoothDelay = <T>(payload: T, ms = MOCK_DELAY_MS) =>
   new Promise<T>((resolve) => setTimeout(() => resolve(payload), ms));
@@ -168,9 +206,7 @@ const aggregateLeaderboard = (
 
 const fetchJson = async (url: string) => {
   const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Polymarket request failed (${response.status})`);
-  }
+  if (!response.ok) throw new Error(`Polymarket request failed (${response.status})`);
   return response.json();
 };
 
@@ -237,29 +273,100 @@ export async function fetchTopTraderProfiles(): Promise<PolymarketTraderProfile[
 }
 
 export async function fetchMarkets(): Promise<MarketSummary[]> {
+  if (polymarketClient) {
+    try {
+      const response = await polymarketClient.getSimplifiedMarkets();
+      const markets = response?.data || response?.markets || [];
+      if (markets.length) {
+        return smoothDelay(
+          markets.slice(0, 10).map((market: any) => ({
+            id: market.id,
+            title: market.title,
+            marketType: market.marketType,
+            probability: market.probability || market.price || 0,
+          })),
+        );
+      }
+    } catch (error) {
+      console.warn('Live markets fetch failed, falling back to mocks.', error);
+    }
+  }
+  return smoothDelay(MOCK_MARKETS);
+}
+
+export async function fetchAccountBalance() {
+  if (!polymarketClient || !PROXY_WALLET) return null;
   try {
-    const data = await fetchJson(MARKET_ENDPOINT);
-    const markets = data?.markets || [];
-    if (!markets.length) throw new Error('Empty market payload');
-    const mapped = (markets as any[]).slice(0, 10).map((market) => ({
-      id: market.id,
-      title: market.title,
-      marketType: market.marketType,
-      probability: market.probability || market.price || 0,
-    }));
-    return smoothDelay(mapped);
+    const result = await polymarketClient.getBalanceAllowance({ address: PROXY_WALLET });
+    return result;
   } catch (error) {
-    console.warn('Failed to load real markets, using mock subset.', error);
-    return smoothDelay(MOCK_MARKETS);
+    console.warn('Unable to fetch Polymarket balance', error);
+    return null;
   }
 }
 
-export async function placeOrder(request: PlaceOrderRequest): Promise<PlaceOrderResult> {
-  const result: PlaceOrderResult = {
+const recordTrade = (request: PlaceOrderRequest, price: number, pnl: number) => {
+  emitTradeFeed({
+    id: crypto.randomUUID(),
+    market: request.marketId,
+    side: request.side,
+    price,
+    size: request.orderSize,
+    pnl,
+    timestamp: new Date().toISOString(),
+  });
+};
+
+const computePnl = (price: number, request: PlaceOrderRequest) =>
+  price * request.orderSize * (request.side === 'sell' ? 1 : -1);
+
+export async function placeOrder(
+  request: PlaceOrderRequest,
+  options: PlaceOrderOptions = {},
+): Promise<PlaceOrderResult> {
+  if (options.killSwitchActive) {
+    recordTrade(request, request.limitPrice ?? 0, 0);
+    return {
+      success: false,
+      orderId: 'KILL_SWITCH',
+      message: 'Skipped: Kill switch active.',
+    };
+  }
+
+  if (polymarketClient) {
+    try {
+      const marketOrder = {
+        tokenID: request.marketId,
+        amount: request.orderSize,
+        side: request.side === 'buy' ? Side.BUY : Side.SELL,
+        price: request.limitPrice,
+      };
+      const response: any = await polymarketClient.createAndPostMarketOrder(
+        marketOrder,
+        undefined,
+        OrderType.FOK,
+      );
+      const executedPrice = request.limitPrice ?? marketOrder.price ?? 0;
+      const pnl = computePnl(executedPrice, request);
+      recordTrade(request, executedPrice, pnl);
+      return {
+        success: true,
+        orderId: response?.orderID || 'LIVE',
+        message: 'Order submitted via Polymarket SDK.',
+      };
+    } catch (error) {
+      console.warn('Polymarket order failed, falling back to mock.', error);
+    }
+  }
+
+  const fallbackPrice = request.limitPrice ?? 0;
+  const fallbackPnl = computePnl(fallbackPrice, request);
+  recordTrade(request, fallbackPrice, fallbackPnl);
+  return smoothDelay({
     success: true,
     orderId: `MOCK-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
     message: 'Order simulated locally. Swap in the CLOB client when ready.',
-  };
-  console.debug('Polymarket placeOrder stub', request);
-  return smoothDelay(result);
+  });
 }
+
+export { PROXY_WALLET };

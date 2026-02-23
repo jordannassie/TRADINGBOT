@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { useCopyList } from '../context/CopyListContext.jsx';
+import { fetchAccountBalance, PROXY_WALLET } from '../services/polymarket';
 
 export default function Settings() {
   const {
@@ -8,6 +10,30 @@ export default function Settings() {
     setExposureCap,
   } = useCopyList();
   const { killSwitchActive, dailyLossLimit, exposureCap } = riskControls;
+  const [balance, setBalance] = useState(null);
+  const [lastSync, setLastSync] = useState(null);
+  const [loadingBalance, setLoadingBalance] = useState(false);
+
+  const formatBalance = (data) => {
+    if (!data) return '—';
+    if (typeof data === 'string') return data;
+    if (typeof data.balance === 'number' || typeof data.balance === 'string') return data.balance;
+    if (typeof data.allowance === 'number' || typeof data.allowance === 'string') return data.allowance;
+    return JSON.stringify(data);
+  };
+
+  const refreshBalance = async () => {
+    if (!PROXY_WALLET) return;
+    setLoadingBalance(true);
+    const payload = await fetchAccountBalance();
+    setBalance(payload);
+    setLastSync(new Date().toLocaleString());
+    setLoadingBalance(false);
+  };
+
+  useEffect(() => {
+    refreshBalance();
+  }, []);
 
   return (
     <div className="page-stack">
@@ -74,6 +100,30 @@ export default function Settings() {
             These controls live in local state for now, but can be synced to the engine when the
             risk service is wired.
           </p>
+        </article>
+
+        <article className="card clipboard-card">
+          <header className="section-header">
+            <div>
+              <p className="eyebrow">Clipboard</p>
+              <h3>Account snapshot</h3>
+            </div>
+          </header>
+          <div className="clipboard-row">
+            <strong>Polymarket account</strong>
+            <span>{PROXY_WALLET || 'Not connected'}</span>
+          </div>
+          <div className="clipboard-row">
+            <strong>Balance</strong>
+            <span>{formatBalance(balance)}</span>
+          </div>
+          <div className="clipboard-row">
+            <strong>Last sync</strong>
+            <span>{lastSync || '—'}</span>
+          </div>
+          <button type="button" className="ghost-btn" onClick={refreshBalance} disabled={loadingBalance}>
+            {loadingBalance ? 'Refreshing…' : 'Refresh balance'}
+          </button>
         </article>
 
         <article className="card control-card">

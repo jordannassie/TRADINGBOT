@@ -26,8 +26,10 @@ const buildReason = ({ score, liquidity, combinedPrice }) => {
   return 'Meets criteria';
 };
 
+const isLive = process.argv.includes('--live');
+
 const main = async () => {
-  console.log('Starting copy simulation...');
+  console.log(`Starting ${isLive ? 'live' : 'mock'} copy simulation...`);
   const leaderboard = await fetchJson(LEADERBOARD_URL);
   const markets = await fetchJson(MARKETS_URL);
 

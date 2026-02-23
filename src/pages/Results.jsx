@@ -3,8 +3,8 @@ import {
   equityCurve,
   leaderboard,
 } from '../data/analyticsMocks';
+import { useTradeFeed } from '../context/TradeFeedContext';
 
-const maxEquity = Math.max(...equityCurve.map((point) => point.value));
 const maxPnL = Math.max(...dailyPnL.map((item) => Math.abs(item.value)));
 
 const monthlyBreakdown = [
@@ -16,6 +16,10 @@ const monthlyBreakdown = [
 ];
 
 export default function Results() {
+  const { equityCurve: liveEquity, dailyPnL: liveDaily, liveFeed } = useTradeFeed();
+  const equityPoints = liveEquity.length ? liveEquity : equityCurve;
+  const maxEquity = Math.max(1, ...equityPoints.map((point) => Math.abs(point.value)));
+  const dailyValue = liveFeed.length ? liveDaily : dailyPnL.reduce((sum, bar) => sum + bar.value, 0);
   return (
     <div className="page-stack">
       <header className="top-bar">
@@ -34,7 +38,7 @@ export default function Results() {
           <span className="fine">Mocked once for trends</span>
         </div>
         <div className="chart-sparkline archive-curve">
-          {equityCurve.map((point, index) => (
+          {equityPoints.map((point, index) => (
             <span
               key={`archive-${index}`}
               style={{ height: `${(point.value / maxEquity) * 100}%` }}
@@ -53,9 +57,9 @@ export default function Results() {
             <p className="eyebrow">Daily PnL bars</p>
             <h2>Rolling 2-week view</h2>
           </div>
-          <span className="fine">Resets with each deploy</span>
+          <span className="fine">Live net: {dailyValue >= 0 ? `+${dailyValue}` : dailyValue} USD</span>
         </header>
-        <div className="daily-pnl archive-bars" aria-label="Archive daily PnL">
+          <div className="daily-pnl archive-bars" aria-label="Archive daily PnL">
           {dailyPnL.map((bar, index) => (
             <div className="daily-bar" key={`archive-pnl-${index}`}>
               <span
@@ -67,6 +71,35 @@ export default function Results() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="card live-feed-card">
+        <header className="section-header">
+          <div>
+            <p className="eyebrow">Live trade feed</p>
+            <h2>Last 5 fills</h2>
+          </div>
+        </header>
+        {liveFeed.length > 0 ? (
+          <ul className="live-feed-list">
+            {liveFeed.map((trade) => (
+              <li key={trade.id}>
+                <div>
+                  <strong>{trade.market}</strong>
+                  <span className="fine">
+                    {trade.side.toUpperCase()} · {trade.size} @ {trade.price.toFixed(3)}
+                  </span>
+                </div>
+                <span className={`live-feed-pnl ${trade.pnl >= 0 ? 'positive' : 'negative'}`}>
+                  {trade.pnl >= 0 ? '+' : ''}
+                  {trade.pnl.toFixed(2)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="fine">No fills yet. Trades will appear here once execution starts.</p>
+        )}
       </section>
 
       <section className="grid archive-breakdown">
