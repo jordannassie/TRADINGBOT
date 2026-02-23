@@ -314,6 +314,22 @@ nav {
   gap: 6px;
 }
 
+.cta-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, rgba(143, 60, 255, 0.15), rgba(6, 6, 9, 0.95));
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.cta-banner .primary-btn {
+  margin-left: auto;
+}
+
 .analytics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -343,6 +359,38 @@ nav {
   display: flex;
   flex-direction: column;
   gap: 18px;
+}
+
+.capital-growth {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.capital-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.capital-point {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 16px;
+}
+
+.proof-callout {
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(143, 60, 255, 0.4);
+  background: rgba(143, 60, 255, 0.1);
+}
+
+.capital-highlight {
+  font-weight: 600;
+  margin: 0 0 8px;
 }
 
 .strategy-steps {

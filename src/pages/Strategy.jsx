@@ -53,16 +53,20 @@ const strategyPlays = [
 
 const operationSteps = [
   {
-    title: 'Discover',
-    detail: 'Ingest the Polymarket leaderboard + our live dashboard to spot consistent wins, volume, and CopyScores.',
+    title: 'Discovery',
+    detail: 'Ingest the Polymarket leaderboard, live dashboard, and risk feed to identify consistently sized winners.',
   },
   {
-    title: 'Vet',
-    detail: 'Review trade summaries, liquidity footprints, and correlation to our copy rules before promoting.',
+    title: 'Vetting',
+    detail: 'Review trade summaries, liquidity footprints, copy score trends, and correlated baskets before promoting.',
   },
   {
-    title: 'Copy',
-    detail: 'Mirror trades with defined sizing, kill-switch guardrails, and same-market hedges.',
+    title: 'Copy / Arbitrage',
+    detail: 'Mirror trades with defined sizing, Dutch-book hedges, and kill-switch guardrails tied to drawdown triggers.',
+  },
+  {
+    title: 'Audit & Analytics',
+    detail: 'Document signals, run performance dashboards, and feed data back into the analytics hub every cycle.',
   },
 ];
 
@@ -70,15 +74,40 @@ const riskRules = [
   'Global kill switch can pause every execution.',
   'Daily loss limit capped at configured USD amount.',
   'Per-trader exposure never exceeds the configured cap shown in Settings.',
+  'Hard drawdown pause kicks in at −$10 per day before resuming.',
 ];
 
+const capitalGrowthPlan = [
+  'Bake bankroll at ~$40 and trade $4–$6 per edge (~10–15% per trade) until we prove sizing.',
+  'Run Dutch-book arbitrage / YES+NO spreads repeatedly, letting the spread compress before unwinding.',
+  'Auto-scale sizes once bankroll tiers hit $100, $250, $500, etc., with checkpoints at each milestone.',
+  'Enforce kill switch and hard daily drawdown pause (−$10) before stacking further risk.',
+];
+
+const proofLinks = {
+  profile: 'https://polymarket.com/@0x0eA',
+  telegram: 'https://t.me/polymarketarb',
+};
+
 export default function Strategy() {
+  const proofMarkup = (
+    <p className="fine">
+      Proof-of-concept: <a href={proofLinks.profile} target="_blank" rel="noreferrer">
+        0x0eA… Polymarket profile
+      </a>{' '}
+      and the <a href={proofLinks.telegram} target="_blank" rel="noreferrer">
+        decoupled Telegram log
+      </a>{' '}
+      detail a $400K/month, 5-minute BTC arbitrage sweep that we mirror in this plan.
+    </p>
+  );
+
   return (
     <div className="page-stack">
       <header className="top-bar">
         <div>
           <p className="eyebrow">Strategy</p>
-          <h1>Playbook, notes, and operating cadence</h1>
+          <h1>Playbooks, capital, and execution flow</h1>
         </div>
       </header>
 
@@ -86,7 +115,7 @@ export default function Strategy() {
         <header className="section-header">
           <div>
             <p className="eyebrow">Polymarket alpha</p>
-            <h2>Money-making playbook</h2>
+            <h2>Playbooks</h2>
           </div>
           <span className="mono">Derived from top trader behavior</span>
         </header>
@@ -105,26 +134,34 @@ export default function Strategy() {
         </div>
       </section>
 
-      <section className="card strategy-notes">
-        <div className="manager-info">
-          <img src="/nick-profile.jpg" alt="Nick Cross" />
+      <section className="card capital-growth">
+        <header className="section-header">
           <div>
-            <p className="eyebrow">Nick Cross</p>
-            <h3>Copy strategy lead</h3>
-            <p className="fine">
-              Managing TradingBotBoom · Building the Polymarket copy engine. Every trade is vetted
-              against our risk rules before sizing; strategy notes keep the team aligned with the
-              latest narrative.
-            </p>
+            <p className="eyebrow">Capital Growth Plan</p>
+            <h2>Bankroll + arbitrage playbook</h2>
           </div>
+        </header>
+        <div className="capital-grid">
+          {capitalGrowthPlan.map((point) => (
+            <article key={point} className="capital-point">
+              <p className="fine">{point}</p>
+            </article>
+          ))}
+        </div>
+        <div className="proof-callout">
+          <p className="capital-highlight">
+            Rolling proof: 0x0eA… demonstrated a $400K/month 5-minute BTC arbitrage (Polymarket
+            profile + Telegram proof). We layer that cadence into our auto-scaling rules.
+          </p>
+          {proofMarkup}
         </div>
       </section>
 
       <section className="card strategy-flow">
         <header className="section-header">
           <div>
-            <p className="eyebrow">How we operate</p>
-            <h2>Copy flow & cadence</h2>
+            <p className="eyebrow">Execution Flow</p>
+            <h2>Discovery → Vetting → Copy/Arb → Audit/Analytics</h2>
           </div>
         </header>
         <div className="strategy-steps">
@@ -142,7 +179,9 @@ export default function Strategy() {
               <li key={rule}>{rule}</li>
             ))}
           </ul>
-          <p className="fine">Deployment cadence: Weekly recap, daily feeds, and kill switch tests each morning.</p>
+          <p className="fine">
+            Deployment cadence: Weekly recap, daily feeds, and kill switch tests each morning.
+          </p>
         </div>
       </section>
     </div>

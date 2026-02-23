@@ -110,6 +110,16 @@ export default function Dashboard() {
         </div>
       )}
 
+      <section className="cta-banner">
+        <div>
+          <p className="eyebrow">Capital plan</p>
+          <h2>See our copy/arbitrage plan</h2>
+        </div>
+        <Link to="/strategy" className="primary-btn">
+          View strategy
+        </Link>
+      </section>
+
       <section className="grid analytics-grid">
         <article className="card chart-card">
           <div className="section-header">
