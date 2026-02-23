@@ -420,6 +420,20 @@ th {
   padding-bottom: 8px;
 }
 
+.daily-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.daily-bar small {
+  font-size: 10px;
+  opacity: 0.6;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 .bar-positive {
   background: linear-gradient(180deg, #39ffce, rgba(57, 255, 206, 0.2));
 }
@@ -457,6 +471,14 @@ th {
 .leaderboard-score {
   font-size: 14px;
   font-weight: 600;
+}
+
+.leaderboard-score small {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.7;
+  margin-top: 2px;
 }
 
 .timeline-card {
@@ -517,6 +539,60 @@ th {
 .timeline-reason {
   color: rgba(255, 255, 255, 0.75);
   font-size: 13px;
+}
+
+.timeline-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: rgba(244, 246, 251, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.control-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.form-label {
+  font-size: 12px;
+  opacity: 0.8;
+  min-width: 180px;
+}
+
+.form-input {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  max-width: 200px;
+}
+
+.form-input:focus {
+  outline: 1px solid rgba(143, 60, 255, 0.8);
+}
+
+.form-hint {
+  font-size: 12px;
+  opacity: 0.6;
 }
 
 .copylist-card ul {

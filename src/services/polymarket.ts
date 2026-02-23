@@ -13,6 +13,7 @@ type PolymarketTraderProfile = {
     volume: number;
   };
   profileUrl: string;
+  strategy?: string;
 };
 
 type MarketSummary = {
@@ -35,7 +36,8 @@ type PlaceOrderResult = {
   message: string;
 };
 
-const MOCK_TRADERS_URL = new URL('../data/polymarketTopTraders.json', import.meta.url);
+const LIVE_FEED_URL = new URL('../data/polymarketLiveFeed.json', import.meta.url);
+const FALLBACK_FEED_URL = new URL('../data/polymarketTopTraders.json', import.meta.url);
 const MOCK_DELAY_MS = 420;
 
 const FALLBACK_TRADERS: PolymarketTraderProfile[] = [
@@ -78,12 +80,21 @@ const delay = <T>(payload: T, ms = MOCK_DELAY_MS) =>
 
 export async function fetchTopTraderProfiles(): Promise<PolymarketTraderProfile[]> {
   try {
-    const response = await fetch(MOCK_TRADERS_URL);
-    if (!response.ok) throw new Error('Failed to load trader mock data');
+    const response = await fetch(LIVE_FEED_URL);
+    if (!response.ok) throw new Error('Failed to load live feed');
     const data = (await response.json()) as PolymarketTraderProfile[];
     return await delay(data);
-  } catch (error) {
-    console.warn('Polymarket mock fetch failed, falling back.', error);
+  } catch (liveError) {
+    console.warn('Live Polymarket feed unavailable, trying fallback.', liveError);
+  }
+
+  try {
+    const fallbackResponse = await fetch(FALLBACK_FEED_URL);
+    if (!fallbackResponse.ok) throw new Error('Failed to load fallback data');
+    const fallbackData = (await fallbackResponse.json()) as PolymarketTraderProfile[];
+    return await delay(fallbackData);
+  } catch (fallbackError) {
+    console.warn('Fallback feed failed, returning hardcoded traders.', fallbackError);
     return await delay(FALLBACK_TRADERS);
   }
 }

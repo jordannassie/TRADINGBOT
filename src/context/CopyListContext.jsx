@@ -59,13 +59,21 @@ export function CopyListProvider({ children }) {
     }));
   };
 
-  const logEvent = (event) => {
+  const logEvent = ({
+    market = 'Unknown market',
+    positionSize = '—',
+    strategy = 'General copy flow',
+    ...event
+  }) => {
     setState((prev) => ({
       ...prev,
       auditLog: [
         {
           id: crypto.randomUUID(),
           timestamp: new Date().toISOString(),
+          market,
+          positionSize,
+          strategy,
           ...event,
         },
         ...prev.auditLog,

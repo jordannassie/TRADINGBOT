@@ -9,6 +9,8 @@ const FALLBACK_TIMELINE = [
     action: 'Copied',
     market: 'Will the Fed pause in 2026?',
     reason: 'Strong catalyst + proven drawdown control',
+    positionSize: '$42K',
+    strategy: 'Macro catalyst rotation',
   },
   {
     id: 'fallback-2',
@@ -17,14 +19,18 @@ const FALLBACK_TIMELINE = [
     action: 'Skipped',
     market: 'Will ETH drop below $2.6k?',
     reason: 'Volatility too high for current sizing rules',
+    positionSize: '$0',
+    strategy: 'Range arbitrage',
   },
   {
     id: 'fallback-3',
     timestamp: '2026-02-19T09:05:00Z',
     trader: 'BasketArbFund',
     action: 'Copied',
-    market: 'Will two swing states flip in 2026?',
+    market: 'Will two swing states flip party in 2026?',
     reason: 'Cross-market hedge lined up with active basket',
+    positionSize: '$63K',
+    strategy: 'Basket arbitrage',
   },
 ];
 
@@ -40,6 +46,8 @@ export default function Signals() {
       action: event.action || event.type || 'Activity',
       market: event.market || event.detail || 'Unknown market',
       reason: event.reason || event.detail || 'No reason provided',
+      positionSize: event.positionSize || '—',
+      strategy: event.strategy || 'General copy flow',
     }));
   }, [state.auditLog]);
 
@@ -67,6 +75,10 @@ export default function Signals() {
                   <span className="tag-pill">{event.action}</span>
                   <span className="timeline-reason">{event.reason}</span>
                 </p>
+                <div className="timeline-meta">
+                  <span>Position {event.positionSize}</span>
+                  <span>Strategy {event.strategy}</span>
+                </div>
               </div>
             </article>
           ))}

@@ -21,6 +21,14 @@ const formatCompact = (value) => {
 const shortAddress = (address) =>
   address ? `${address.slice(0, 6)}…${address.slice(-4)}` : '—';
 
+const formatExposure = (volume) => {
+  if (!Number.isFinite(volume) || volume <= 0) return '—';
+  if (volume >= 1_000_000) {
+    return `$${(volume / 1_000_000).toFixed(1)}M`;
+  }
+  return `$${Math.round(volume / 1_000).toLocaleString()}K`;
+};
+
 const STATUS_ORDER = ['Candidate', 'Vetted', 'Active'];
 
 const TraderRow = ({ trader, onSelect, isSelected, onVet, onActivate }) => (
@@ -149,11 +157,16 @@ export default function Traders() {
 
   const promoteToVetted = (trader) => {
     addTrader(trader, 'vetted', 'Auto-vetted from leaderboard');
+    const market = trader.favoriteMarkets?.[0] || 'Unknown market';
+    const positionSize = formatExposure(trader.stats?.volume);
+    const strategy = trader.strategy || 'Core copy flow';
     logEvent({
       type: 'VETTED',
       trader: trader.username,
       action: 'Reviewed',
-      market: trader.favoriteMarkets?.[0],
+      market,
+      positionSize,
+      strategy,
       reason: 'Promoted to vetted list from Traders page',
       detail: 'Promoted to vetted list from Traders page',
     });
@@ -161,11 +174,16 @@ export default function Traders() {
 
   const activateTrader = (trader) => {
     addTrader(trader, 'active', 'Copying with default sizing');
+    const market = trader.favoriteMarkets?.[0] || 'Unknown market';
+    const positionSize = formatExposure(trader.stats?.volume);
+    const strategy = trader.strategy || 'Core copy flow';
     logEvent({
       type: 'ACTIVATED',
       trader: trader.username,
       action: 'Copied',
-      market: trader.favoriteMarkets?.[0],
+      market,
+      positionSize,
+      strategy,
       reason: 'Added to Active Copy list',
       detail: 'Added to Active Copy list',
     });
