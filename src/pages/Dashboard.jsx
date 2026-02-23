@@ -1,57 +1,34 @@
+import { Link } from 'react-router-dom';
+import { useMemo } from 'react';
 import { useCopyList } from '../context/CopyListContext.jsx';
+import { dailyPnL, equityCurve, leaderboard, openPositions } from '../data/analyticsMocks';
+import { fallbackTimeline } from '../data/signalsTimeline';
 
-const polymarketPlays = [
-  {
-    title: 'Arbitrage Engine (YES + NO)',
-    summary:
-      'Run Dutch-book arbitrage when panic pushes combined YES+NO odds below 100%. Bot buys both sides instantly, locking the spread.',
-    tactics: [
-      'Monitor markets with high panic volatility or news shocks.',
-      'Automate detection when YES + NO < 0.995 after fees.',
-      'Fire both orders simultaneously; exit when premium compresses.',
-    ],
-  },
-  {
-    title: 'Catalyst Event Farming',
-    summary:
-      'Track traders who specialize in macro/political catalysts (CPI prints, Fed meetings, election filing deadlines). Copy only when they size into markets within a defined window before the catalyst, then unwind on the news.',
-    tactics: [
-      'Filter leaderboard for traders with repeated wins around scheduled events.',
-      'Pair their positions with our own calendar + probability drift alerts.',
-      'Auto-attach commentary links so we know which narrative they are chasing.',
-    ],
-  },
-  {
-    title: 'Liquidity Provision & Range Reversion',
-    summary:
-      'Some whales make steady PnL by providing liquidity to mispriced ranges and clipping rebates/spreads. We mirror only when depth > $50k and odds are in a tight corridor.',
-    tactics: [
-      'Use Polymarket order-book depth to confirm spreads before copying.',
-      'Set hard caps so we never become majority liquidity in that range.',
-      'Exit when spread compresses or volume drops below threshold.',
-    ],
-  },
-  {
-    title: 'Cross-market Arbitrage',
-    summary:
-      'Top shops hit correlated markets (e.g., multiple state election markets) when probabilities diverge. We ingest their fills and replicate basket hedges so risk stays neutral.',
-    tactics: [
-      'Link each trader to their favorite market clusters (US politics, sports, crypto).',
-      'Copy only if at least two markets meet liquidity + divergence criteria.',
-      'Log net exposure per cluster to keep drawdown under control.',
-    ],
-  },
-  {
-    title: 'Time-decay Momentum',
-    summary:
-      'Fast scalpers grind intraday momentum as news propagates. We only copy when the trader has a 70%+ intraday hit rate and we can enforce a time stop (e.g., 45 minutes).',
-    tactics: [
-      'Require signals < 5 minutes old before mirroring.',
-      'Auto-schedule take-profit + time-based exit.',
-      'Throttle copy sizing during low-liquidity sessions.',
-    ],
-  },
-];
+const maxEquity = Math.max(...equityCurve.map((point) => point.value));
+const maxPnL = Math.max(...dailyPnL.map((item) => Math.abs(item.value)));
+
+const timelineSorter = (a, b) => new Date(b.timestamp) - new Date(a.timestamp);
+
+const TimelineItem = ({ event }) => (
+  <article className="timeline-item">
+    <div className="timeline-dot" aria-hidden="true" />
+    <div className="timeline-body">
+      <p className="mono">{new Date(event.timestamp).toLocaleString()}</p>
+      <div className="timeline-topline">
+        <strong>{event.trader}</strong>
+        <span className="fine">{event.market}</span>
+      </div>
+      <p className="timeline-action">
+        <span className="tag-pill">{event.action}</span>
+        <span className="timeline-reason">{event.reason}</span>
+      </p>
+      <div className="timeline-meta">
+        <span>Position {event.positionSize || '—'}</span>
+        <span>Strategy {event.strategy}</span>
+      </div>
+    </div>
+  </article>
+);
 
 export default function Dashboard() {
   const { state } = useCopyList();
@@ -59,11 +36,29 @@ export default function Dashboard() {
   const totalVetted = state.vetted.length;
   const signalsLogged = state.auditLog.length;
 
+  const timeline = useMemo(() => {
+    const rawEvents = state.auditLog.length ? state.auditLog : fallbackTimeline;
+    return rawEvents
+      .map((event) => ({
+        ...event,
+        timestamp: event.timestamp,
+        positionSize: event.positionSize || '—',
+        strategy: event.strategy || 'General copy flow',
+        action: event.action || event.type || 'Activity',
+        reason: event.reason || event.detail || 'No reason provided',
+        market: event.market || event.detail || 'Unknown market',
+      }))
+      .sort(timelineSorter)
+      .slice(0, 3);
+  }, [state.auditLog]);
+
+  const netPnL = dailyPnL.reduce((sum, bar) => sum + bar.value, 0);
+
   return (
     <div className="page-stack">
       <header className="top-bar">
         <div>
-          <p className="eyebrow">Live control</p>
+          <p className="eyebrow">Analytics hub</p>
           <h1>Polymarket trading bot · v0.1</h1>
         </div>
         <div className="status-pill">
@@ -72,78 +67,160 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <section className="grid overview">
-        <article className="metric-card">
-          <p className="metric-label">Active copy traders</p>
+      <section className="glance-strip">
+        <article className="glance-card">
+          <p className="metric-label">Active traders</p>
           <p className="metric-value">{totalActive}</p>
-          <p className="metric-sub">Qualified + mirrored right now</p>
+          <p className="metric-sub">Mirrored right now</p>
         </article>
-        <article className="metric-card">
-          <p className="metric-label">Vetted pipeline</p>
-          <p className="metric-value">{totalVetted}</p>
-          <p className="metric-sub">Ready for promotion</p>
+        <article className="glance-card">
+          <p className="metric-label">Daily PnL</p>
+          <p className="metric-value">{netPnL >= 0 ? `+${netPnL.toLocaleString()}` : netPnL.toLocaleString()}</p>
+          <p className="metric-sub">Latest 14 days</p>
         </article>
-        <article className="metric-card">
+        <article className="glance-card">
           <p className="metric-label">Signals logged</p>
           <p className="metric-value">{signalsLogged}</p>
-          <p className="metric-sub">Audit-ready events</p>
+          <p className="metric-sub">Audit ready</p>
         </article>
-        <article className="metric-card">
-          <p className="metric-label">Risk posture</p>
-          <p className="metric-value">Paused toggle</p>
-          <p className="metric-sub">Kill switch available in Settings</p>
+        <article className="glance-card">
+          <p className="metric-label">Kill switch</p>
+          <p className="metric-value">Armed</p>
+          <p className="metric-sub">Can pause copying</p>
         </article>
       </section>
 
-      <section className="card">
-        <header className="section-header">
-          <div>
-            <p className="eyebrow">Game plan</p>
-            <h2>How TradingBotBoom wins</h2>
+      <section className="grid analytics-grid">
+        <article className="card chart-card">
+          <div className="section-header">
+            <div>
+              <p className="eyebrow">Equity curve</p>
+              <h3>Recent trend</h3>
+            </div>
+            <span className="fine">30-day mock history</span>
           </div>
-        </header>
-        <ol className="roadmap-list">
-          <li>Auto-discover elite Polymarket traders via leaderboard ingestion.</li>
-          <li>Score, vet, and document a transparent Copy List.</li>
-          <li>Mirror trades with defined sizing, liquidity, and slippage controls.</li>
-          <li>Publish real-time performance, audit logs, and daily recaps.</li>
-        </ol>
-      </section>
+          <div className="chart-sparkline" aria-label="Equity curve placeholder">
+            {equityCurve.map((value, index) => (
+              <span
+                key={`equity-${index}`}
+                style={{ height: `${(value.value / maxEquity) * 100}%` }}
+                aria-label={`Point ${index + 1}`}
+              />
+            ))}
+          </div>
+          <p className="metric-sub">Historic mock to show slope before live tracking.</p>
+        </article>
 
-      <section className="card playbook-card">
-        <header className="section-header">
-          <div>
-            <p className="eyebrow">Polymarket alpha</p>
-            <h2>Money-making playbook</h2>
+        <article className="card chart-card">
+          <div className="section-header">
+            <div>
+              <p className="eyebrow">Daily PnL</p>
+              <h3>Rolling 2 weeks</h3>
+            </div>
+            <span className="fine">Net delta: {netPnL.toLocaleString()} USD</span>
           </div>
-          <span className="mono">Derived from top trader behavior</span>
-        </header>
-        <div className="play-grid">
-          {polymarketPlays.map((play) => (
-            <article key={play.title} className="play-card">
-              <h3>{play.title}</h3>
-              <p className="fine">{play.summary}</p>
-              <ul>
-                {play.tactics.map((tip) => (
-                  <li key={tip}>{tip}</li>
+          <div className="daily-pnl" aria-label="Daily PnL placeholder">
+            {dailyPnL.map((bar, index) => (
+              <div className="daily-bar" key={`pnl-${index}`}>
+                <span
+                  className={bar.value >= 0 ? 'bar-positive' : 'bar-negative'}
+                  style={{ height: `${(Math.abs(bar.value) / maxPnL) * 100}%` }}
+                  aria-label={`${bar.label} ${bar.value} dollars`}
+                />
+                <small>{bar.label}</small>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article className="card leaderboard-card">
+          <header className="section-header">
+            <div>
+              <p className="eyebrow">Per-trader leaderboard</p>
+              <h3>Copy returns</h3>
+            </div>
+            <span className="fine">Sorted by ROI</span>
+          </header>
+          <ul className="leaderboard-list">
+            {leaderboard.map((item) => (
+              <li key={item.trader}>
+                <div>
+                  <strong>{item.trader}</strong>
+                  <span className="mono">{item.handle}</span>
+                </div>
+                <span className="leaderboard-score">
+                  {item.roi}% ROI
+                  <small>{item.volatility} volatility</small>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </article>
+
+        <article className="card open-positions-card">
+          <header className="section-header">
+            <div>
+              <p className="eyebrow">Open positions</p>
+              <h3>Active bets</h3>
+            </div>
+            <span className="fine">Live copy tracking</span>
+          </header>
+          <div className="table-wrapper">
+            <table className="open-positions-table">
+              <thead>
+                <tr>
+                  <th>Trader</th>
+                  <th>Market</th>
+                  <th>Notional</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {openPositions.map((position) => (
+                  <tr key={position.market}>
+                    <td>{position.trader}</td>
+                    <td>{position.market}</td>
+                    <td>{position.notional}</td>
+                    <td>{position.status}</td>
+                  </tr>
                 ))}
-              </ul>
-            </article>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section className="card signals-preview">
+        <header className="section-header">
+          <div>
+            <p className="eyebrow">Signals timeline</p>
+            <h2>Recent execution log</h2>
+          </div>
+          <Link to="/signals" className="link-btn">
+            View all ↗
+          </Link>
+        </header>
+        <div className="timeline">
+          {timeline.map((event) => (
+            <TimelineItem key={event.id} event={event} />
           ))}
         </div>
       </section>
 
-      <section className="card manager-card">
-        <div className="manager-info">
-          <img src="/nick-profile.jpg" alt="Nick Cross" />
+      <section className="card strategy-callout">
+        <header className="section-header">
           <div>
-            <p className="eyebrow">Copy strategy lead</p>
-            <h3>Nick Cross</h3>
-            <p className="fine">
-              Managing TradingBotBoom · Building the Polymarket copy engine
-            </p>
+            <p className="eyebrow">Strategy hub</p>
+            <h2>Playbook + risk rules</h2>
           </div>
-        </div>
+          <Link to="/strategy" className="link-btn">
+            Visit Strategy page ↗
+          </Link>
+        </header>
+        <p>
+          Head to the Strategy tab for catalyst-specific playbooks, Nick’s notes, and the “How we
+          operate” flow. Keeps the analytics surface clean while routing playbook edits to one place.
+        </p>
       </section>
     </div>
   );

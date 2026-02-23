@@ -1,54 +1,23 @@
 import { useMemo } from 'react';
 import { useCopyList } from '../context/CopyListContext.jsx';
-
-const FALLBACK_TIMELINE = [
-  {
-    id: 'fallback-1',
-    timestamp: '2026-02-21T12:20:00Z',
-    trader: 'MacroBuffers',
-    action: 'Copied',
-    market: 'Will the Fed pause in 2026?',
-    reason: 'Strong catalyst + proven drawdown control',
-    positionSize: '$42K',
-    strategy: 'Macro catalyst rotation',
-  },
-  {
-    id: 'fallback-2',
-    timestamp: '2026-02-20T15:10:00Z',
-    trader: 'AlphaWhale',
-    action: 'Skipped',
-    market: 'Will ETH drop below $2.6k?',
-    reason: 'Volatility too high for current sizing rules',
-    positionSize: '$0',
-    strategy: 'Range arbitrage',
-  },
-  {
-    id: 'fallback-3',
-    timestamp: '2026-02-19T09:05:00Z',
-    trader: 'BasketArbFund',
-    action: 'Copied',
-    market: 'Will two swing states flip party in 2026?',
-    reason: 'Cross-market hedge lined up with active basket',
-    positionSize: '$63K',
-    strategy: 'Basket arbitrage',
-  },
-];
+import { fallbackTimeline } from '../data/signalsTimeline';
 
 export default function Signals() {
   const { state } = useCopyList();
 
   const timeline = useMemo(() => {
-    const rawEvents = state.auditLog.length ? state.auditLog : FALLBACK_TIMELINE;
-    return rawEvents.map((event) => ({
-      id: event.id,
-      timestamp: new Date(event.timestamp),
-      trader: event.trader,
-      action: event.action || event.type || 'Activity',
-      market: event.market || event.detail || 'Unknown market',
-      reason: event.reason || event.detail || 'No reason provided',
-      positionSize: event.positionSize || '—',
-      strategy: event.strategy || 'General copy flow',
-    }));
+    const rawEvents = state.auditLog.length ? state.auditLog : fallbackTimeline;
+    return rawEvents
+      .map((event) => ({
+        ...event,
+        timestamp: new Date(event.timestamp),
+        action: event.action || event.type || 'Activity',
+        market: event.market || event.detail || 'Unknown market',
+        reason: event.reason || event.detail || 'No reason provided',
+        positionSize: event.positionSize || '—',
+        strategy: event.strategy || 'General copy flow',
+      }))
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   }, [state.auditLog]);
 
   return (

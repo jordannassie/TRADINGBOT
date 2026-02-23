@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout.jsx';
 import Dashboard from './pages/Dashboard.jsx';
+import Strategy from './pages/Strategy.jsx';
 import Traders from './pages/Traders.jsx';
 import Markets from './pages/Markets.jsx';
 import Signals from './pages/Signals.jsx';
@@ -10,6 +11,7 @@ import { CopyListProvider } from './context/CopyListContext.jsx';
 
 const navItems = [
   { path: '/dashboard', label: 'Dashboard' },
+  { path: '/strategy', label: 'Strategy' },
   { path: '/traders', label: 'Traders' },
   { path: '/markets', label: 'Markets' },
   { path: '/signals', label: 'Signals' },
@@ -24,6 +26,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/strategy" element={<Strategy />} />
           <Route path="/traders" element={<Traders />} />
           <Route path="/markets" element={<Markets />} />
           <Route path="/signals" element={<Signals />} />

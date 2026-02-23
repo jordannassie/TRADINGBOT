@@ -205,6 +205,111 @@ nav {
   font-size: 12px;
 }
 
+.glance-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.glance-card {
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.signals-preview .timeline {
+  gap: 16px;
+}
+
+.strategy-callout {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 24px;
+}
+
+.strategy-playbook {
+  padding: 24px;
+}
+
+.strategy-notes {
+  padding: 24px;
+}
+
+.strategy-flow {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.strategy-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.strategy-step {
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.strategy-risks ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.archive-hero,
+.archive-chart {
+  padding: 24px;
+}
+
+.archive-curve {
+  height: 180px;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.archive-curve span {
+  flex: 1;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(143, 60, 255, 0.6), rgba(143, 60, 255, 0.05));
+}
+
+.archive-bars {
+  height: 140px;
+  padding-top: 8px;
+}
+
+.archive-bars span {
+  width: 14px;
+}
+
+.archive-breakdown {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.archive-history {
+  padding: 24px;
+}
+
 .table-wrapper {
   width: 100%;
   overflow-x: auto;
