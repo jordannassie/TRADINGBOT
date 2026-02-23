@@ -1,0 +1,117 @@
+[
+  {
+    "handle": "MacroBuffers",
+    "address": "0xMAcR0BufFeRS",
+    "copyScore": 94,
+    "categories": ["Politics", "Macro"],
+    "summary": "Disciplined macro trader that swings into Fed, CPI, and election catalysts with defined entry/exit rules.",
+    "status": "Candidate",
+    "favoriteMarkets": [
+      "Will the Fed pause rate hikes in 2026?",
+      "Will a Democrat sweep the 2026 Senate races?",
+      "Will U.S. inflation fall below 3.5% by Q4 2026?"
+    ],
+    "stats": {
+      "pnl7d": 7200,
+      "pnl30d": 33200,
+      "pnlAll": 218000,
+      "volume": 940000
+    },
+    "profileUrl": "https://polymarket.com/@MacroBuffers"
+  },
+  {
+    "handle": "CalypsoEvents",
+    "address": "0xC4lypso",
+    "copyScore": 91,
+    "categories": ["Event", "Macro"],
+    "summary": "Fast-follow event trader that captures early moves in tech, policy, and macro narratives with tight risk controls.",
+    "status": "Candidate",
+    "favoriteMarkets": [
+      "Will Congress pass the AI governance bill in 2026?",
+      "Will the 2026 Oscars viewership beat 2025?"
+    ],
+    "stats": {
+      "pnl7d": 5100,
+      "pnl30d": 26000,
+      "pnlAll": 140800,
+      "volume": 710000
+    },
+    "profileUrl": "https://polymarket.com/@CalypsoEvents"
+  },
+  {
+    "handle": "AlphaWhale",
+    "address": "0xA1ph4Wh4l3",
+    "copyScore": 89,
+    "categories": ["Crypto", "Range"],
+    "summary": "Patient arbitrageper that hunts for spread compression across ETH/SOL politics markets and rarely overexposes.",
+    "status": "Vetted",
+    "favoriteMarkets": [
+      "Will ETH drop below $2.6k by July 1?",
+      "Will Solana surpass Cardano in CPI markets by Q3?"
+    ],
+    "stats": {
+      "pnl7d": 6200,
+      "pnl30d": 24800,
+      "pnlAll": 167000,
+      "volume": 830000
+    },
+    "profileUrl": "https://polymarket.com/@AlphaWhale"
+  },
+  {
+    "handle": "MomentumMike",
+    "address": "0xM0m3ntum",
+    "copyScore": 87,
+    "categories": ["Sports", "Politics"],
+    "summary": "Intraday scalper who copies fast-moving narratives, banks 20-45 minute trends, and respects stop limits.",
+    "status": "Vetted",
+    "favoriteMarkets": [
+      "Will the 2026 World Cup winner be Brazil?",
+      "Will X average more than $150B daily volume in Q2 2026?"
+    ],
+    "stats": {
+      "pnl7d": 4700,
+      "pnl30d": 20800,
+      "pnlAll": 120400,
+      "volume": 520000
+    },
+    "profileUrl": "https://polymarket.com/@MomentumMike"
+  },
+  {
+    "handle": "BasketArbFund",
+    "address": "0xB45k37Arb",
+    "copyScore": 92,
+    "categories": ["Macro", "Arbitrage"],
+    "summary": "Runs macro-composite arbitrage baskets on election markets, hedging across correlated contracts without single bets.",
+    "status": "Active",
+    "favoriteMarkets": [
+      "Will the US Presidential election result be decided by November 5, 2026?",
+      "Will two or more swing states flip party control in 2026?"
+    ],
+    "stats": {
+      "pnl7d": 7800,
+      "pnl30d": 34900,
+      "pnlAll": 225000,
+      "volume": 1200000
+    },
+    "profileUrl": "https://polymarket.com/@BasketArbFund"
+  },
+  {
+    "handle": "FluxPulse",
+    "address": "0xFluxPulse",
+    "copyScore": 88,
+    "categories": ["Politics", "Crypto"],
+    "summary": "Hybrid macro/crypto generalist who balances political catalysts and crypto monetization markets, dialing risk by time-of-day.",
+    "status": "Active",
+    "favoriteMarkets": [
+      "Will Bitcoin close above $55k on May 1, 2026?",
+      "Will the Supreme Court rule on the AI policy lawsuit in 2026?"
+    ],
+    "stats": {
+      "pnl7d": 6600,
+      "pnl30d": 29800,
+      "pnlAll": 184000,
+      "volume": 980000
+    },
+    "profileUrl": "https://polymarket.com/@FluxPulse"
+  }
+]
