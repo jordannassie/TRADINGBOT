@@ -2,6 +2,16 @@ import { useCopyList } from '../context/CopyListContext.jsx';
 
 const polymarketPlays = [
   {
+    title: 'Arbitrage Engine (YES + NO)',
+    summary:
+      'Run Dutch-book arbitrage when panic pushes combined YES+NO odds below 100%. Bot buys both sides instantly, locking the spread.',
+    tactics: [
+      'Monitor markets with high panic volatility or news shocks.',
+      'Automate detection when YES + NO < 0.995 after fees.',
+      'Fire both orders simultaneously; exit when premium compresses.',
+    ],
+  },
+  {
     title: 'Catalyst Event Farming',
     summary:
       'Track traders who specialize in macro/political catalysts (CPI prints, Fed meetings, election filing deadlines). Copy only when they size into markets within a defined window before the catalyst, then unwind on the news.',
