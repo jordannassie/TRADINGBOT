@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import useLeaderboard from '../hooks/useLeaderboard.js';
+import { demoTraders } from '../data/demoTraders';
 import { useCopyList } from '../context/CopyListContext.jsx';
 
 const formatNumber = (value, options = {}) => {
@@ -38,8 +39,11 @@ export default function Traders() {
   const { state, addTrader, removeTrader, updateNote, logEvent } = useCopyList();
   const [filter, setFilter] = useState('top');
 
+  const [showDemo, setShowDemo] = useState(true);
+
   const filtered = useMemo(() => {
     if (filter === 'top') return traders.slice(0, 20);
+    if (filter === 'demo') return demoTraders;
     if (filter === 'momentum') return traders.filter((t) => (t.pnlHistory?.DAY || 0) > 0).slice(0, 20);
     if (filter === 'defensive') return traders.filter((t) => (t.pnlHistory?.MONTH || 0) > 0 && (t.winRate || 0.5) > 0.55);
     return traders;
@@ -108,6 +112,9 @@ export default function Traders() {
         <div className="toggle-group">
           <button className={filter === 'top' ? 'active' : ''} onClick={() => setFilter('top')}>
             Top 20
+          </button>
+          <button className={filter === 'demo' ? 'active' : ''} onClick={() => setFilter('demo')}>
+            Demo profiles
           </button>
           <button className={filter === 'momentum' ? 'active' : ''} onClick={() => setFilter('momentum')}>
             Momentum

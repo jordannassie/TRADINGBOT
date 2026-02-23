@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
+import { demoTraders } from '../data/demoTraders';
 
 const TIMEFRAMES = ['DAY', 'WEEK', 'MONTH', 'ALL'];
 const ORDER_BY = ['PNL', 'VOLUME'];
 const LEADERBOARD_ENDPOINT = 'https://clob.polymarket.com/trader-leaderboard';
 
-const FALLBACK_TRADER = {
+const FALLBACK_TRADER = demoTraders[0] || {
   username: 'k9Q2mX4L8A7ZP3R',
   address: '0xK9Q2mX4L8A7ZP3R',
   pnl: 120000,
@@ -41,6 +42,7 @@ const aggregateLeaderboard = (entries) => {
   const map = new Map();
 
   entries.forEach(({ timeframe, orderBy, traders }) => {
+    if (!traders || traders.length === 0) return;
     traders.forEach((trader, rank) => {
       const key = trader.account || trader.address || trader.username;
       if (!key) return;
@@ -66,7 +68,9 @@ const aggregateLeaderboard = (entries) => {
   });
 
   if (map.size === 0) {
-    map.set(FALLBACK_TRADER.address, FALLBACK_TRADER);
+    demoTraders.forEach((demo, idx) => {
+      map.set(demo.address || demo.username || `demo-${idx}`, demo);
+    });
   }
 
   const enriched = Array.from(map.values()).map((trader) => {

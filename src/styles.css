@@ -437,3 +437,31 @@ th {
 .sidebar-manager .brand-title {
   font-size: 16px;
 }
+
+.trader-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.trader-card {
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.trader-card h3 {
+  margin: 0 0 8px;
+}
+
+.trader-card span {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.trader-card ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
