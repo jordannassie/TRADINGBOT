@@ -1,9 +1,18 @@
 import { NavLink } from 'react-router-dom';
+import { useState } from 'react';
 
 export default function Layout({ navItems, children }) {
+  const [navOpen, setNavOpen] = useState(false);
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
+        <button
+          className="mobile-nav-toggle"
+          onClick={() => setNavOpen((prev) => !prev)}
+        >
+          {navOpen ? 'Close menu' : 'Menu'}
+        </button>
         <div className="brand">
           <div className="brand-mark" aria-hidden="true"></div>
           <div>
@@ -11,7 +20,7 @@ export default function Layout({ navItems, children }) {
             <p className="brand-subtitle">Polymarket copy engine</p>
           </div>
         </div>
-        <nav>
+        <nav className={`nav-menu ${navOpen ? 'open' : ''}`}>
           {navItems.map((item) => (
             <NavLink
               key={item.path}
@@ -19,6 +28,7 @@ export default function Layout({ navItems, children }) {
               className={({ isActive }) =>
                 isActive ? 'nav-pill active' : 'nav-pill'
               }
+              onClick={() => setNavOpen(false)}
             >
               {item.label}
             </NavLink>
