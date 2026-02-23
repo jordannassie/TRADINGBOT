@@ -6,14 +6,15 @@
   line-height: 1.4;
 }
 
-* {
-  box-sizing: border-box;
-}
-
 body {
   margin: 0;
   min-height: 100vh;
   background: radial-gradient(circle at top, #1f1f3b, #060608 60%);
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 a {
@@ -34,6 +35,10 @@ a {
   display: flex;
   flex-direction: column;
   gap: 32px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .brand {
@@ -103,6 +108,8 @@ nav {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  min-height: 100vh;
+  position: relative;
 }
 
 .page-stack {
