@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useMemo } from 'react';
 import { useCopyList } from '../context/CopyListContext.jsx';
+import useLeaderboard from '../hooks/useLeaderboard.js';
 import { dailyPnL, equityCurve, leaderboard, openPositions } from '../data/analyticsMocks';
 import { fallbackTimeline } from '../data/signalsTimeline';
 
@@ -32,6 +33,7 @@ const TimelineItem = ({ event }) => (
 
 export default function Dashboard() {
   const { state } = useCopyList();
+  const { status, error } = useLeaderboard();
   const totalActive = state.active.length;
   const totalVetted = state.vetted.length;
   const signalsLogged = state.auditLog.length;
@@ -53,6 +55,15 @@ export default function Dashboard() {
   }, [state.auditLog]);
 
   const netPnL = dailyPnL.reduce((sum, bar) => sum + bar.value, 0);
+  const killSwitchActive = state.riskControls?.killSwitchActive;
+  const statusMessage =
+    status === 'idle'
+      ? null
+      : status === 'loading'
+      ? 'Loading live leaderboard...'
+      : status === 'error'
+      ? `Error loading leaderboard: ${error?.message || 'Unknown'}`
+      : 'Live leaderboard synced';
 
   return (
     <div className="page-stack">
@@ -66,6 +77,7 @@ export default function Dashboard() {
           Connected
         </div>
       </header>
+      {statusMessage && <div className="status-message">{statusMessage}</div>}
 
       <section className="glance-strip">
         <article className="glance-card">
@@ -85,10 +97,18 @@ export default function Dashboard() {
         </article>
         <article className="glance-card">
           <p className="metric-label">Kill switch</p>
-          <p className="metric-value">Armed</p>
-          <p className="metric-sub">Can pause copying</p>
+          <p className="metric-value">{killSwitchActive ? 'Active' : 'Standby'}</p>
+          <p className="metric-sub">
+            {killSwitchActive ? 'Copying paused' : 'Ready to pause'}
+          </p>
         </article>
       </section>
+      {killSwitchActive && (
+        <div className="kill-switch-banner">
+          Kill switch is active and copying is currently paused. Toggle it in Settings when you are
+          ready.
+        </div>
+      )}
 
       <section className="grid analytics-grid">
         <article className="card chart-card">

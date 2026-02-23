@@ -8,6 +8,11 @@ const defaultState = {
   vetted: [],
   active: [],
   auditLog: [],
+  riskControls: {
+    killSwitchActive: false,
+    dailyLossLimit: 4500,
+    exposureCap: 60000,
+  },
 };
 
 const getKey = (trader) =>
@@ -16,7 +21,18 @@ const getKey = (trader) =>
 export function CopyListProvider({ children }) {
   const [state, setState] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : defaultState;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        ...defaultState,
+        ...parsed,
+        riskControls: {
+          ...defaultState.riskControls,
+          ...(parsed.riskControls || {}),
+        },
+      };
+    }
+    return defaultState;
   });
 
   useEffect(() => {
@@ -59,6 +75,36 @@ export function CopyListProvider({ children }) {
     }));
   };
 
+  const toggleKillSwitch = (value) => {
+    setState((prev) => ({
+      ...prev,
+      riskControls: {
+        ...prev.riskControls,
+        killSwitchActive: value,
+      },
+    }));
+  };
+
+  const setDailyLossLimit = (value) => {
+    setState((prev) => ({
+      ...prev,
+      riskControls: {
+        ...prev.riskControls,
+        dailyLossLimit: value,
+      },
+    }));
+  };
+
+  const setExposureCap = (value) => {
+    setState((prev) => ({
+      ...prev,
+      riskControls: {
+        ...prev.riskControls,
+        exposureCap: value,
+      },
+    }));
+  };
+
   const logEvent = ({
     market = 'Unknown market',
     positionSize = '—',
@@ -88,6 +134,9 @@ export function CopyListProvider({ children }) {
       removeTrader,
       updateNote,
       logEvent,
+      toggleKillSwitch,
+      setDailyLossLimit,
+      setExposureCap,
     }),
     [state],
   );

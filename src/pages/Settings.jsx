@@ -1,4 +1,14 @@
+import { useCopyList } from '../context/CopyListContext.jsx';
+
 export default function Settings() {
+  const {
+    state: { riskControls },
+    toggleKillSwitch,
+    setDailyLossLimit,
+    setExposureCap,
+  } = useCopyList();
+  const { killSwitchActive, dailyLossLimit, exposureCap } = riskControls;
+
   return (
     <div className="page-stack">
       <header className="top-bar">
@@ -7,6 +17,10 @@ export default function Settings() {
           <h1>Risk controls & API vault</h1>
         </div>
       </header>
+
+      <div className={`risk-banner ${killSwitchActive ? 'active' : ''}`}>
+        {killSwitchActive ? 'Kill switch is active — all copying paused.' : 'Kill switch is ready.'}
+      </div>
 
       <section className="settings-grid">
         <article className="card control-card">
@@ -23,8 +37,8 @@ export default function Settings() {
             <input
               id="kill-switch"
               type="checkbox"
-              defaultChecked
-              disabled
+              checked={killSwitchActive}
+              onChange={(event) => toggleKillSwitch(event.target.checked)}
               aria-label="Kill switch"
             />
           </div>
@@ -35,9 +49,9 @@ export default function Settings() {
             <input
               id="daily-loss"
               type="number"
-              defaultValue="4500"
+              value={dailyLossLimit}
               min="0"
-              readOnly
+              onChange={(event) => setDailyLossLimit(Number(event.target.value))}
               className="form-input"
             />
             <span className="form-hint">USD</span>
@@ -48,14 +62,17 @@ export default function Settings() {
             </label>
             <input
               id="exposure-cap"
-              type="text"
-              value="$60K"
-              readOnly
+              type="number"
+              value={exposureCap}
+              min="0"
+              onChange={(event) => setExposureCap(Number(event.target.value))}
               className="form-input"
             />
+            <span className="form-hint">USD</span>
           </div>
           <p className="fine">
-            These values are mocked for now but wired so that live controls can overwrite them.
+            These controls live in local state for now, but can be synced to the engine when the
+            risk service is wired.
           </p>
         </article>
 
