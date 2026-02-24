@@ -10,6 +10,7 @@ import Settings from './pages/Settings.jsx';
 import BtcBot from './pages/BtcBot.jsx';
 import { CopyListProvider } from './context/CopyListContext.jsx';
 import { TradeFeedProvider } from './context/TradeFeedContext.tsx';
+import { UIProvider } from './context/UIContext.jsx';
 
 const navItems = [
   { path: '/dashboard', label: 'Dashboard' },
@@ -26,6 +27,7 @@ export default function App() {
   return (
     <CopyListProvider>
       <TradeFeedProvider>
+      <UIProvider>
       <Layout navItems={navItems}>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -40,6 +42,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Layout>
+      </UIProvider>
       </TradeFeedProvider>
     </CopyListProvider>
   );

@@ -3,6 +3,7 @@ import { useCopyList } from '../context/CopyListContext.jsx';
 import { fallbackTimeline } from '../data/signalsTimeline';
 
 export default function Signals() {
+  // ── Existing data wiring (unchanged) ─────────────────────────────────────────
   const { state } = useCopyList();
 
   const timeline = useMemo(() => {
@@ -21,36 +22,57 @@ export default function Signals() {
   }, [state.auditLog]);
 
   return (
-    <div className="page-stack">
-      <header className="top-bar">
+    <div className="page-stack g-dashboard">
+      <div className="t-page-header">
         <div>
-          <p className="eyebrow">Signals</p>
-          <h1>Trader events & audit log</h1>
+          <span className="t-eyebrow">Signals</span>
+          <h1 className="t-page-title">Trader events &amp; audit log</h1>
         </div>
-      </header>
+        <span className="t-page-count">{timeline.length} events</span>
+      </div>
 
-      <section className="card timeline-card">
-        <div className="timeline">
-          {timeline.map((event) => (
-            <article className="timeline-item" key={event.id}>
-              <div className="timeline-dot" aria-hidden="true" />
-              <div className="timeline-body">
-                <p className="mono">{event.timestamp.toLocaleString()}</p>
-                <div className="timeline-topline">
-                  <strong>{event.trader}</strong>
-                  <span className="fine">{event.market}</span>
-                </div>
-                <p className="timeline-action">
-                  <span className="tag-pill">{event.action}</span>
-                  <span className="timeline-reason">{event.reason}</span>
-                </p>
-                <div className="timeline-meta">
-                  <span>Position {event.positionSize}</span>
-                  <span>Strategy {event.strategy}</span>
-                </div>
-              </div>
-            </article>
-          ))}
+      <section className="g-section">
+        <div className="g-section-header">
+          <h2 className="g-section-title">Execution Log</h2>
+          <span className="g-section-meta">All copy / skip / error events in order</span>
+        </div>
+        <div className="g-table-wrap">
+          <table className="g-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Trader</th>
+                <th>Action</th>
+                <th>Market</th>
+                <th>Position</th>
+                <th>Strategy</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              {timeline.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="g-empty">No signals logged yet.</td>
+                </tr>
+              ) : (
+                timeline.map((event) => (
+                  <tr key={event.id}>
+                    <td className="g-mono g-dim t-ts">{event.timestamp.toLocaleString()}</td>
+                    <td className="g-bold">{event.trader}</td>
+                    <td>
+                      <span className={`g-tag${event.action === 'Copied' ? ' g-tag--active' : event.action === 'Skipped' ? ' g-tag--watch' : ''}`}>
+                        {event.action}
+                      </span>
+                    </td>
+                    <td className="g-market-cell">{event.market}</td>
+                    <td className="g-mono">{event.positionSize}</td>
+                    <td className="g-dim" style={{ fontSize: 11 }}>{event.strategy}</td>
+                    <td className="g-dim" style={{ fontSize: 11, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{event.reason}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </section>
     </div>

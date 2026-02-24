@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../services/supabaseClient.js';
 
+// ─── Existing constants and helpers (unchanged) ───────────────────────────────
 const POLL_INTERVAL_MS = 5_000;
 
 const DEFAULT_CONFIG = {
@@ -18,43 +19,31 @@ const DEFAULT_CONFIG = {
   updatedAt: null,
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatTs(ts) {
   if (!ts) return '—';
-  try {
-    return new Date(ts).toLocaleString();
-  } catch {
-    return ts;
-  }
+  try { return new Date(ts).toLocaleString(); } catch { return ts; }
 }
 
-function Badge({ value, onLabel = 'YES', offLabel = 'NO', danger = false }) {
-  const active = Boolean(value);
-  const style = active
-    ? danger
-      ? 'btc-badge btc-badge--danger'
-      : 'btc-badge btc-badge--on'
-    : 'btc-badge btc-badge--off';
-  return <span className={style}>{active ? onLabel : offLabel}</span>;
+// ─── Event type tag (terminal style) ─────────────────────────────────────────
+const EVENT_TYPE_CLASS = {
+  OPPORTUNITY: 'g-tag--active',
+  ORDER_SUBMITTED: 'g-tag g-tag--mode',
+  FILLED: 'g-tag--active',
+  PARTIAL_FILL_FLATTENED: 'g-tag--warn',
+  SKIPPED: 'g-tag--watch',
+  HALT: 'g-tag--danger',
+  ERROR: 'g-tag--danger',
+  HEARTBEAT: 'g-tag--mode',
+};
+
+function EventTypeTag({ type }) {
+  const cls = EVENT_TYPE_CLASS[type] ?? 'g-tag--mode';
+  return <span className={`g-tag ${cls}`}>{type}</span>;
 }
 
-function EventRow({ ev }) {
-  const typeClass = `btc-event-type btc-event-type--${ev.type?.toLowerCase() ?? 'info'}`;
-  return (
-    <li className="btc-event-row">
-      <span className={typeClass}>{ev.type}</span>
-      <span className="btc-event-market">{ev.market ?? '—'}</span>
-      <span className="btc-event-edge">
-        {ev.effectiveEdge != null ? `edge ${(ev.effectiveEdge * 100).toFixed(2)}%` : ''}
-      </span>
-      <span className="btc-event-msg fine">{ev.message ?? ''}</span>
-      <span className="btc-event-ts fine">{formatTs(ev.ts)}</span>
-    </li>
-  );
-}
-
-// ─── Main Dashboard Component ─────────────────────────────────────────────────
+// ─── Main BTC Bot Dashboard ───────────────────────────────────────────────────
 export default function BtcBot() {
+  // ── Existing state and data wiring (unchanged) ────────────────────────────────
   const [config, setConfig] = useState(DEFAULT_CONFIG);
   const [opportunities, setOpportunities] = useState([]);
   const [execEvents, setExecEvents] = useState([]);
@@ -73,27 +62,18 @@ export default function BtcBot() {
           .limit(100),
       ]);
 
-      if (configRes.data) {
-        setConfig(configRes.data);
-      }
+      if (configRes.data) setConfig(configRes.data);
 
       const events = eventsRes.data ?? [];
-
       const hb = events.find((e) => e.type === 'HEARTBEAT');
       if (hb) setLastHeartbeat(hb.ts);
 
-      setOpportunities(
-        events.filter((e) => e.type === 'OPPORTUNITY').slice(0, 50),
-      );
-
+      setOpportunities(events.filter((e) => e.type === 'OPPORTUNITY').slice(0, 50));
       setExecEvents(
         events
-          .filter((e) =>
-            ['ORDER_SUBMITTED', 'FILLED', 'PARTIAL_FILL_FLATTENED', 'SKIPPED', 'HALT', 'ERROR'].includes(e.type),
-          )
+          .filter((e) => ['ORDER_SUBMITTED', 'FILLED', 'PARTIAL_FILL_FLATTENED', 'SKIPPED', 'HALT', 'ERROR'].includes(e.type))
           .slice(0, 50),
       );
-
       setError(null);
     } catch (err) {
       setError(String(err));
@@ -111,216 +91,159 @@ export default function BtcBot() {
   const isLive = config.mode === 'LIVE';
   const ksActive = Boolean(config.killSwitch);
   const execEnabled = Boolean(config.executionEnabled);
-
   const hasSupabase = Boolean(import.meta.env.VITE_SUPABASE_URL);
 
   return (
-    <div className="page-stack">
-      {/* ── Header ── */}
-      <header className="top-bar">
+    <div className="page-stack g-dashboard">
+      {/* ── Page header ── */}
+      <div className="t-page-header">
         <div>
-          <p className="eyebrow">BTC Bot v1</p>
-          <h1>Bitcoin Arbitrage Dashboard</h1>
-          <p className="fine">Dutch-book arb scanner · "Bitcoin Up or Down" markets only</p>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <Badge value={!ksActive} onLabel="SCANNING" offLabel="HALTED" danger={ksActive} />
-          <p className="fine" style={{ marginTop: 6 }}>
-            Last heartbeat: {formatTs(lastHeartbeat)}
+          <span className="t-eyebrow">BTC Bot v1</span>
+          <h1 className="t-page-title">Bitcoin Arbitrage Dashboard</h1>
+          <p className="g-dim" style={{ fontSize: 12, marginTop: 2 }}>
+            Dutch-book arb scanner · "Bitcoin Up or Down" markets only
           </p>
         </div>
-      </header>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span className={`g-status-dot${ksActive ? ' g-status-halted' : ' g-status-ok'}`} />
+          <span className="t-page-count">{ksActive ? 'HALTED' : 'SCANNING'}</span>
+          <span className="g-dim" style={{ fontSize: 11 }}>Heartbeat: {formatTs(lastHeartbeat)}</span>
+        </div>
+      </div>
 
-      {/* ── No Supabase warning ── */}
       {!hasSupabase && (
         <div className="kill-switch-banner">
-          VITE_SUPABASE_URL not set — dashboard is showing defaults, not live data.
+          VITE_SUPABASE_URL not set — showing defaults, not live data.
           Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file.
         </div>
       )}
-
-      {error && (
-        <div className="kill-switch-banner">
-          Supabase error: {error}
-        </div>
-      )}
-
-      {/* ── At-a-Glance strip ── */}
-      <section className="glance-strip">
-        <article className="glance-card">
-          <p className="metric-label">Mode</p>
-          <p className={`metric-value ${isLive ? 'btc-live-value' : ''}`}>
-            {config.mode ?? '—'}
-          </p>
-          <p className="metric-sub">{isLive ? 'Real orders active' : 'Paper simulation'}</p>
-        </article>
-        <article className="glance-card">
-          <p className="metric-label">Execution</p>
-          <p className="metric-value">{execEnabled ? 'Enabled' : 'Disabled'}</p>
-          <p className="metric-sub">{execEnabled ? 'Orders will fire' : 'Orders blocked'}</p>
-        </article>
-        <article className="glance-card">
-          <p className="metric-label">Kill Switch</p>
-          <p className={`metric-value ${ksActive ? 'btc-danger-value' : ''}`}>
-            {ksActive ? 'Active' : 'Standby'}
-          </p>
-          <p className="metric-sub">{ksActive ? 'Scanning paused' : 'Ready'}</p>
-        </article>
-        <article className="glance-card">
-          <p className="metric-label">Min Edge</p>
-          <p className="metric-value">{((config.minEdge ?? 0) * 100).toFixed(1)}%</p>
-          <p className="metric-sub">Fee buffer: {((config.feeBuffer ?? 0) * 100).toFixed(1)}%</p>
-        </article>
-        <article className="glance-card">
-          <p className="metric-label">Max USD / Trade</p>
-          <p className="metric-value">${config.maxUsdPerTrade ?? '—'}</p>
-          <p className="metric-sub">Open cap: ${config.maxOpenUsdTotal ?? '—'}</p>
-        </article>
-        <article className="glance-card">
-          <p className="metric-label">Daily Loss Cap</p>
-          <p className="metric-value">${config.maxDailyLossUsd ?? '—'}</p>
-          <p className="metric-sub">Trades/hr: {config.maxTradesPerHour ?? '—'}</p>
-        </article>
-      </section>
-
-      {/* ── Kill switch active banner ── */}
+      {error && <div className="kill-switch-banner">Supabase error: {error}</div>}
       {ksActive && (
         <div className="kill-switch-banner">
-          Kill switch is ACTIVE — bot is not scanning or placing orders.
-          Edit <code>killSwitch</code> in Supabase (<code>btc_bot_config</code>) to resume.
+          Kill switch ACTIVE — not scanning. Edit <code>killSwitch</code> in Supabase (<code>btc_bot_config</code>) to resume.
         </div>
       )}
 
-      {/* ── Config (read-only) ── */}
-      <section className="card" style={{ padding: '24px 28px' }}>
-        <header className="section-header" style={{ marginBottom: 16 }}>
-          <div>
-            <p className="eyebrow">Configuration</p>
-            <h2>Bot Config</h2>
-          </div>
-        </header>
-
-        <div className="status-message" style={{ marginBottom: 16 }}>
-          Config is edited in Supabase (<code>btc_bot_config</code> table, row id = "default").
-          Changes apply within ~3 seconds of saving.
+      {/* ── Config summary bar ── */}
+      <div className="g-pnl-bar">
+        <div className="g-pnl-group">
+          <span className="g-pnl-label">Mode</span>
+          <span className={`g-pnl-val${isLive ? ' g-neg' : ' g-pos'}`} style={{ fontSize: 16 }}>{config.mode}</span>
         </div>
-
-        <div className="btc-controls-grid">
-          <div className="btc-control-row">
-            <span className="btc-control-label"><span>Mode</span></span>
-            <Badge value={isLive} onLabel="LIVE" offLabel="PAPER" danger={isLive} />
-          </div>
-          <div className="btc-control-row">
-            <span className="btc-control-label"><span>Kill Switch</span></span>
-            <Badge value={ksActive} onLabel="Active (halted)" offLabel="Standby (running)" danger={ksActive} />
-          </div>
-          <div className="btc-control-row">
-            <span className="btc-control-label"><span>Execution Enabled</span></span>
-            <Badge value={execEnabled} onLabel="Yes" offLabel="No" />
-          </div>
-          <div className="btc-control-row">
-            <span className="btc-control-label"><span>Min Edge</span></span>
-            <span className="fine">{((config.minEdge ?? 0) * 100).toFixed(2)}%</span>
-          </div>
-          <div className="btc-control-row">
-            <span className="btc-control-label"><span>Fee Buffer</span></span>
-            <span className="fine">{((config.feeBuffer ?? 0) * 100).toFixed(2)}%</span>
-          </div>
-          <div className="btc-control-row">
-            <span className="btc-control-label"><span>Max USD / Trade</span></span>
-            <span className="fine">${config.maxUsdPerTrade ?? '—'}</span>
-          </div>
-          <div className="btc-control-row">
-            <span className="btc-control-label"><span>Max Open USD</span></span>
-            <span className="fine">${config.maxOpenUsdTotal ?? '—'}</span>
-          </div>
-          <div className="btc-control-row">
-            <span className="btc-control-label"><span>Daily Loss Cap</span></span>
-            <span className="fine">${config.maxDailyLossUsd ?? '—'}</span>
-          </div>
-          <div className="btc-control-row">
-            <span className="btc-control-label"><span>Max Trades / Hour</span></span>
-            <span className="fine">{config.maxTradesPerHour ?? '—'}</span>
-          </div>
+        <div className="g-pnl-group">
+          <span className="g-pnl-label">Execution</span>
+          <span className={`g-pnl-val${execEnabled ? ' g-pos' : ' g-dim'}`} style={{ fontSize: 16 }}>{execEnabled ? 'Enabled' : 'Disabled'}</span>
         </div>
+        <div className="g-pnl-group">
+          <span className="g-pnl-label">Kill Switch</span>
+          <span className={`g-pnl-val${ksActive ? ' g-neg' : ' g-pos'}`} style={{ fontSize: 16 }}>{ksActive ? 'Active' : 'Standby'}</span>
+        </div>
+        <div className="g-pnl-divider" />
+        <div className="g-pnl-group">
+          <span className="g-pnl-label g-pnl-label--dim">Min Edge</span>
+          <span className="g-pnl-val g-pnl-val--sm">{((config.minEdge ?? 0) * 100).toFixed(2)}%</span>
+        </div>
+        <div className="g-pnl-group">
+          <span className="g-pnl-label g-pnl-label--dim">Fee Buffer</span>
+          <span className="g-pnl-val g-pnl-val--sm">{((config.feeBuffer ?? 0) * 100).toFixed(2)}%</span>
+        </div>
+        <div className="g-pnl-group">
+          <span className="g-pnl-label g-pnl-label--dim">Max USD/Trade</span>
+          <span className="g-pnl-val g-pnl-val--sm">${config.maxUsdPerTrade}</span>
+        </div>
+        <div className="g-pnl-group">
+          <span className="g-pnl-label g-pnl-label--dim">Daily Loss Cap</span>
+          <span className="g-pnl-val g-pnl-val--sm">${config.maxDailyLossUsd}</span>
+        </div>
+      </div>
 
-        <p className="fine" style={{ marginTop: 16, opacity: 0.6 }}>
-          Last updated: {formatTs(config.updatedAt)}
-        </p>
-      </section>
+      {/* ── Config note ── */}
+      <div className="t-info-strip">
+        Config is edited in Supabase (<code>btc_bot_config</code>, row id = "default"). Changes apply within ~3s.
+        Last updated: {formatTs(config.updatedAt)}
+      </div>
 
-      {/* ── Opportunities feed ── */}
-      <section className="card">
-        <header className="section-header">
-          <div>
-            <p className="eyebrow">Scanner</p>
-            <h2>Recent Opportunities</h2>
-            <p className="fine">Last 50 OPPORTUNITY events — markets where effective edge ≥ minEdge</p>
+      {/* ── Two-column: Opportunities + Execution ── */}
+      <div className="t-two-col">
+        {/* Opportunities */}
+        <section className="g-section">
+          <div className="g-section-header">
+            <h2 className="g-section-title">Opportunities</h2>
+            <span className="g-section-meta">Last 50 OPPORTUNITY events</span>
           </div>
-        </header>
-        {loading ? (
-          <p className="fine">Loading...</p>
-        ) : opportunities.length === 0 ? (
-          <p className="fine">
-            No opportunities logged yet. Make sure the bot is running and not kill-switched.
-          </p>
-        ) : (
-          <ul className="btc-event-list">
-            <li className="btc-event-row btc-event-header">
-              <span>Type</span>
-              <span>Market</span>
-              <span>Edge</span>
-              <span>Message</span>
-              <span>Time</span>
-            </li>
-            {opportunities.map((ev) => (
-              <EventRow key={ev.id} ev={ev} />
-            ))}
-          </ul>
-        )}
-      </section>
+          {loading ? (
+            <p className="g-empty">Loading…</p>
+          ) : opportunities.length === 0 ? (
+            <p className="g-empty">No opportunities yet. Bot must be running and not kill-switched.</p>
+          ) : (
+            <div className="g-table-wrap">
+              <table className="g-table">
+                <thead>
+                  <tr><th>Market</th><th>Yes Ask</th><th>No Ask</th><th>Edge</th><th>Shares</th><th>Time</th></tr>
+                </thead>
+                <tbody>
+                  {opportunities.map((ev) => (
+                    <tr key={ev.id}>
+                      <td className="g-market-cell">{ev.market ?? '—'}</td>
+                      <td className="g-mono">{ev.yesAsk != null ? ev.yesAsk.toFixed(3) : '—'}</td>
+                      <td className="g-mono">{ev.noAsk != null ? ev.noAsk.toFixed(3) : '—'}</td>
+                      <td className={`g-mono${(ev.effectiveEdge ?? 0) > 0 ? ' g-pos' : ' g-dim'}`}>
+                        {ev.effectiveEdge != null ? `${(ev.effectiveEdge * 100).toFixed(2)}%` : '—'}
+                      </td>
+                      <td className="g-mono">{ev.shares ?? '—'}</td>
+                      <td className="g-mono g-dim t-ts">{formatTs(ev.ts)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
 
-      {/* ── Execution log ── */}
-      <section className="card">
-        <header className="section-header">
-          <div>
-            <p className="eyebrow">Execution</p>
-            <h2>Recent Orders &amp; Fills</h2>
-            <p className="fine">ORDER_SUBMITTED · FILLED · PARTIAL_FILL_FLATTENED · SKIPPED · HALT · ERROR</p>
+        {/* Execution log */}
+        <section className="g-section">
+          <div className="g-section-header">
+            <h2 className="g-section-title">Execution Log</h2>
+            <span className="g-section-meta">Orders · Fills · Skips · Errors</span>
           </div>
-        </header>
-        {loading ? (
-          <p className="fine">Loading...</p>
-        ) : execEvents.length === 0 ? (
-          <p className="fine">
-            No execution events yet. Events appear here when the bot attempts trades.
-          </p>
-        ) : (
-          <ul className="btc-event-list">
-            <li className="btc-event-row btc-event-header">
-              <span>Type</span>
-              <span>Market</span>
-              <span>Edge</span>
-              <span>Message</span>
-              <span>Time</span>
-            </li>
-            {execEvents.map((ev) => (
-              <EventRow key={ev.id} ev={ev} />
-            ))}
-          </ul>
-        )}
-      </section>
+          {loading ? (
+            <p className="g-empty">Loading…</p>
+          ) : execEvents.length === 0 ? (
+            <p className="g-empty">No execution events yet.</p>
+          ) : (
+            <div className="g-table-wrap">
+              <table className="g-table">
+                <thead>
+                  <tr><th>Type</th><th>Market</th><th>Edge</th><th>Message</th><th>Time</th></tr>
+                </thead>
+                <tbody>
+                  {execEvents.map((ev) => (
+                    <tr key={ev.id}>
+                      <td><EventTypeTag type={ev.type} /></td>
+                      <td className="g-market-cell">{ev.market ?? '—'}</td>
+                      <td className="g-mono g-dim">
+                        {ev.effectiveEdge != null ? `${(ev.effectiveEdge * 100).toFixed(2)}%` : '—'}
+                      </td>
+                      <td className="g-dim" style={{ fontSize: 11, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.message ?? '—'}</td>
+                      <td className="g-mono g-dim t-ts">{formatTs(ev.ts)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      </div>
 
       {/* ── Setup reminder ── */}
-      <section className="card strategy-callout" style={{ marginBottom: 32 }}>
-        <p className="eyebrow">Setup</p>
-        <h3>Running the bot</h3>
-        <p className="fine">
+      <section className="g-section">
+        <div className="g-section-header">
+          <h2 className="g-section-title">Setup</h2>
+        </div>
+        <p className="g-empty" style={{ paddingBottom: 20 }}>
           Terminal: <code>cd bots/btc-bot-v1 &amp;&amp; npm install &amp;&amp; npm start</code>
-          <br />
-          The bot logs heartbeats every 5s, opportunities as found, and fills/skips on each arb attempt.
-          <br />
-          See <strong>bots/btc-bot-v1/README.md</strong> for full setup instructions and Supabase SQL.
+          {' '}· Run <code>npm run test:live</code> to verify creds without placing orders.
+          {' '}See <strong>bots/btc-bot-v1/README.md</strong> for full setup and Supabase SQL.
         </p>
       </section>
     </div>

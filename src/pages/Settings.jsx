@@ -3,6 +3,7 @@ import { useCopyList } from '../context/CopyListContext.jsx';
 import { fetchAccountBalance, PROXY_WALLET } from '../services/polymarket';
 
 export default function Settings() {
+  // ── Existing wiring (unchanged) ───────────────────────────────────────────────
   const {
     state: { riskControls },
     toggleKillSwitch,
@@ -31,160 +32,132 @@ export default function Settings() {
     setLoadingBalance(false);
   };
 
-  useEffect(() => {
-    refreshBalance();
-  }, []);
+  useEffect(() => { refreshBalance(); }, []);
 
   return (
-    <div className="page-stack">
-      <header className="top-bar">
+    <div className="page-stack g-dashboard">
+      <div className="t-page-header">
         <div>
-          <p className="eyebrow">Settings</p>
-          <h1>Risk controls & API vault</h1>
+          <span className="t-eyebrow">Settings</span>
+          <h1 className="t-page-title">Risk controls &amp; API vault</h1>
         </div>
-      </header>
-
-      <div className={`risk-banner ${killSwitchActive ? 'active' : ''}`}>
-        {killSwitchActive ? 'Kill switch is active — all copying paused.' : 'Kill switch is ready.'}
+        <span className={`g-tag${killSwitchActive ? ' g-tag--danger' : ' g-tag--active'}`}>
+          {killSwitchActive ? 'Kill Switch ON' : 'Kill Switch Ready'}
+        </span>
       </div>
 
-      <section className="settings-grid">
-        <article className="card control-card">
-          <header className="section-header">
-            <div>
-              <p className="eyebrow">Risk controls</p>
-              <h3>Global governance</h3>
-            </div>
-          </header>
-          <div className="control-row">
-            <label htmlFor="kill-switch" className="form-label">
-              Global kill switch
-            </label>
-            <input
-              id="kill-switch"
-              type="checkbox"
-              checked={killSwitchActive}
-              onChange={(event) => toggleKillSwitch(event.target.checked)}
-              aria-label="Kill switch"
-            />
-          </div>
-          <div className="control-row">
-            <label htmlFor="daily-loss" className="form-label">
-              Daily loss limit
-            </label>
-            <input
-              id="daily-loss"
-              type="number"
-              value={dailyLossLimit}
-              min="0"
-              onChange={(event) => setDailyLossLimit(Number(event.target.value))}
-              className="form-input"
-            />
-            <span className="form-hint">USD</span>
-          </div>
-          <div className="control-row">
-            <label htmlFor="exposure-cap" className="form-label">
-              Per-trader exposure cap
-            </label>
-            <input
-              id="exposure-cap"
-              type="number"
-              value={exposureCap}
-              min="0"
-              onChange={(event) => setExposureCap(Number(event.target.value))}
-              className="form-input"
-            />
-            <span className="form-hint">USD</span>
-          </div>
-          <p className="fine">
-            These controls live in local state for now, but can be synced to the engine when the
-            risk service is wired.
-          </p>
-        </article>
+      {killSwitchActive && (
+        <div className="kill-switch-banner">Kill switch is active — all copying paused.</div>
+      )}
 
-        <article className="card clipboard-card">
-          <header className="section-header">
-            <div>
-              <p className="eyebrow">Clipboard</p>
-              <h3>Account snapshot</h3>
+      <div className="t-settings-grid">
+        {/* ── Risk Controls ── */}
+        <section className="g-section t-settings-card">
+          <div className="g-section-header">
+            <h2 className="g-section-title">Risk Controls</h2>
+            <span className="g-section-meta">Global governance</span>
+          </div>
+          <div className="t-form-body">
+            <div className="t-form-row">
+              <label htmlFor="kill-switch" className="t-form-label">Global kill switch</label>
+              <div className="t-form-ctrl">
+                <input
+                  id="kill-switch"
+                  type="checkbox"
+                  className="t-checkbox"
+                  checked={killSwitchActive}
+                  onChange={(e) => toggleKillSwitch(e.target.checked)}
+                />
+                <span className={`t-switch-label${killSwitchActive ? ' t-switch-label--on' : ''}`}>
+                  {killSwitchActive ? 'Active' : 'Standby'}
+                </span>
+              </div>
             </div>
-          </header>
-          <div className="clipboard-row">
-            <strong>Polymarket account</strong>
-            <span>{PROXY_WALLET || 'Not connected'}</span>
+            <div className="t-form-row">
+              <label htmlFor="daily-loss" className="t-form-label">Daily loss limit</label>
+              <div className="t-form-ctrl">
+                <input
+                  id="daily-loss"
+                  type="number"
+                  value={dailyLossLimit}
+                  min="0"
+                  onChange={(e) => setDailyLossLimit(Number(e.target.value))}
+                  className="t-input"
+                />
+                <span className="t-form-unit">USD</span>
+              </div>
+            </div>
+            <div className="t-form-row">
+              <label htmlFor="exposure-cap" className="t-form-label">Per-trader exposure cap</label>
+              <div className="t-form-ctrl">
+                <input
+                  id="exposure-cap"
+                  type="number"
+                  value={exposureCap}
+                  min="0"
+                  onChange={(e) => setExposureCap(Number(e.target.value))}
+                  className="t-input"
+                />
+                <span className="t-form-unit">USD</span>
+              </div>
+            </div>
+            <p className="g-dim" style={{ fontSize: 12, marginTop: 12 }}>
+              These controls live in local state; can be synced to the engine once the risk service is wired.
+            </p>
           </div>
-          <div className="clipboard-row">
-            <strong>Balance</strong>
-            <span>{formatBalance(balance)}</span>
-          </div>
-          <div className="clipboard-row">
-            <strong>Last sync</strong>
-            <span>{lastSync || '—'}</span>
-          </div>
-          <button type="button" className="ghost-btn" onClick={refreshBalance} disabled={loadingBalance}>
-            {loadingBalance ? 'Refreshing…' : 'Refresh balance'}
-          </button>
-        </article>
+        </section>
 
-        <article className="card control-card">
-          <header className="section-header">
-            <div>
-              <p className="eyebrow">API vault</p>
-              <h3>Credential placeholders</h3>
-            </div>
-          </header>
-          <div className="control-row">
-            <label htmlFor="usdc-balance" className="form-label">
-              USDC balance
-            </label>
-            <input
-              id="usdc-balance"
-              type="text"
-              value="152,400 USDC"
-              readOnly
-              className="form-input"
-            />
+        {/* ── Account Clipboard ── */}
+        <section className="g-section t-settings-card">
+          <div className="g-section-header">
+            <h2 className="g-section-title">Account Snapshot</h2>
+            <span className="g-section-meta">Clipboard</span>
           </div>
-          <div className="control-row">
-            <label htmlFor="api-key" className="form-label">
-              Polymarket API key
-            </label>
-            <input
-              id="api-key"
-              type="password"
-              value="••••••••••••••••"
-              readOnly
-              className="form-input"
-            />
+          <div className="t-form-body">
+            <div className="t-kv-row"><span className="t-kv-label">Polymarket account</span><span className="t-kv-val g-mono">{PROXY_WALLET || 'Not connected'}</span></div>
+            <div className="t-kv-row"><span className="t-kv-label">Balance</span><span className="t-kv-val g-mono">{formatBalance(balance)}</span></div>
+            <div className="t-kv-row"><span className="t-kv-label">Last sync</span><span className="t-kv-val g-dim">{lastSync || '—'}</span></div>
+            <button type="button" className="t-btn" onClick={refreshBalance} disabled={loadingBalance}>
+              {loadingBalance ? 'Refreshing…' : 'Refresh balance'}
+            </button>
           </div>
-          <div className="control-row">
-            <label htmlFor="proxy-wallet" className="form-label">
-              Proxy wallet
-            </label>
-            <input
-              id="proxy-wallet"
-              type="text"
-              value="0xProxyWalletDemo"
-              readOnly
-              className="form-input"
-            />
-          </div>
-        </article>
+        </section>
 
-        <article className="card control-card">
-          <header className="section-header">
-            <div>
-              <p className="eyebrow">Notes</p>
-              <h3>Execution hints</h3>
+        {/* ── API Vault ── */}
+        <section className="g-section t-settings-card">
+          <div className="g-section-header">
+            <h2 className="g-section-title">API Vault</h2>
+            <span className="g-section-meta">Credential placeholders</span>
+          </div>
+          <div className="t-form-body">
+            <div className="t-form-row">
+              <label htmlFor="usdc-balance" className="t-form-label">USDC balance</label>
+              <input id="usdc-balance" type="text" value="152,400 USDC" readOnly className="t-input t-input--readonly" />
             </div>
-          </header>
-          <p>
-            Commit these controls to your configuration store once a secure credential manager is
-            ready. The kill switch and limits can be toggled via the trading engine with the same
-            field names.
-          </p>
-        </article>
-      </section>
+            <div className="t-form-row">
+              <label htmlFor="api-key" className="t-form-label">Polymarket API key</label>
+              <input id="api-key" type="password" value="••••••••••••••••" readOnly className="t-input t-input--readonly" />
+            </div>
+            <div className="t-form-row">
+              <label htmlFor="proxy-wallet" className="t-form-label">Proxy wallet</label>
+              <input id="proxy-wallet" type="text" value="0xProxyWalletDemo" readOnly className="t-input t-input--readonly" />
+            </div>
+          </div>
+        </section>
+
+        {/* ── Notes ── */}
+        <section className="g-section t-settings-card">
+          <div className="g-section-header">
+            <h2 className="g-section-title">Execution Hints</h2>
+          </div>
+          <div className="t-form-body">
+            <p className="g-dim" style={{ fontSize: 13, lineHeight: 1.6 }}>
+              Commit these controls to your configuration store once a secure credential manager is ready.
+              The kill switch and limits can be toggled via the trading engine with the same field names.
+            </p>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
