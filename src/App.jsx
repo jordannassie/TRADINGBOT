@@ -14,7 +14,7 @@ import { TradeFeedProvider } from './context/TradeFeedContext.tsx';
 import { UIProvider } from './context/UIContext.jsx';
 
 const navItems = [
-  { path: '/dashboard', label: 'Command Center' },
+  { path: '/dashboard', label: 'Control Center' },
   { path: '/profile', label: 'Profile' },
   { path: '/results', label: 'Results' },
   { path: '/settings', label: 'Settings' },

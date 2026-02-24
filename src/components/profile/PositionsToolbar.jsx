@@ -1,5 +1,3 @@
-import { useUI } from '../../context/UIContext.jsx';
-
 export default function PositionsToolbar({
   activeTab,
   onChangeTab,
@@ -7,10 +5,8 @@ export default function PositionsToolbar({
   onSearch,
   onSort,
 }) {
-  const { strategyView, setStrategyView, execView, setExecView } = useUI();
-
   return (
-    <div className="profile-toolbar">
+    <div className="profile-toolbar poly-toolbar">
       <div className="tab-group">
         {['active', 'closed'].map((tab) => (
           <button
@@ -37,44 +33,6 @@ export default function PositionsToolbar({
         <button type="button" className="profile-sort" onClick={() => onSort('value')}>
           Value
         </button>
-      </div>
-
-      <div className="toolbar-pill-groups">
-        <div className="pill-group">
-          <span className="pill-label">Strategy</span>
-          <button
-            type="button"
-            className={`pill${strategyView === 'copy' ? ' active' : ''}`}
-            onClick={() => setStrategyView('copy')}
-          >
-            Copy
-          </button>
-          <button
-            type="button"
-            className={`pill${strategyView === 'arb' ? ' active' : ''}`}
-            onClick={() => setStrategyView('arb')}
-          >
-            Arbitrage
-          </button>
-        </div>
-
-        <div className="pill-group">
-          <span className="pill-label">Execution</span>
-          <button
-            type="button"
-            className={`pill${execView === 'paper' ? ' active' : ''}`}
-            onClick={() => setExecView('paper')}
-          >
-            Paper
-          </button>
-          <button
-            type="button"
-            className={`pill${execView === 'live' ? ' active' : ''}`}
-            onClick={() => setExecView('live')}
-          >
-            Live
-          </button>
-        </div>
       </div>
     </div>
   );
