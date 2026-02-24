@@ -66,8 +66,9 @@ export default function Dashboard() {
   const seenCopyTradeIds = useRef(new Set());
   const copyIntervalRef = useRef(null);
   const supabaseUrlRaw = import.meta.env.VITE_SUPABASE_URL ?? '';
+  const supabaseUrlPresent = /^https?:\/\//i.test(supabaseUrlRaw);
+  const supabaseAnonPresent = Boolean(import.meta.env.VITE_SUPABASE_ANON_KEY ?? '');
   const supabaseUrlInvalid = Boolean(supabaseUrlRaw.length && !supabaseUrlRaw.toLowerCase().startsWith('http'));
-  const supabaseUrlMissing = !supabaseUrlRaw;
   const hasSupabase = supabaseConfigured;
   const supabaseBannerMessage = supabaseConfigured
     ? ''
