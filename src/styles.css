@@ -32,6 +32,18 @@
   pointer-events: none;
 }
 
+.module-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.module-row:last-child {
+  border-bottom: none;
+}
+
 .status-pill.status-green {
   border-color: rgba(0, 200, 122, 0.6);
   color: var(--poly-green);

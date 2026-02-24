@@ -454,18 +454,29 @@ export default function Dashboard() {
             </div>
             <div className="strategy-panels">
               <section className={`strategy-panel${strategyView === 'copy' ? ' active' : ' disabled'}`}>
-                <div className="strategy-panel-header">
-                  <h3>Copying Setup</h3>
-                  <span className="strategy-status">{strategyView === 'copy' ? 'Active' : 'Paused'}</span>
-                </div>
-            <p className="strategy-panel-body">Monitoring @k9Q2mX4L8A7ZP3R · BOT on + Paper to copy.</p>
+            <div className="strategy-panel-header">
+              <h3>Copying Setup</h3>
+              <span className="strategy-status-pill">ACTIVE</span>
+            </div>
+            <div className="module-row">
+              <span>Target</span>
+              <strong>@k9Q2mX4L8A7ZP3R</strong>
+            </div>
+            <div className="module-row">
+              <span>Mode</span>
+              <strong>Paper</strong>
+            </div>
+            <div className="module-row">
+              <span>Bot</span>
+              <strong>{state.riskControls?.killSwitchActive ? 'OFF' : 'ON'}</strong>
+            </div>
               </section>
               <section className={`strategy-panel${strategyView === 'arb' ? ' active' : ' disabled'}`}>
                 <div className="strategy-panel-header">
                   <h3>Arbitrage Setup</h3>
                   <span className="strategy-status">Coming soon</span>
                 </div>
-            <p className="strategy-panel-body">Arbitrage coming soon · Copying is the active route.</p>
+            <p className="strategy-panel-body">Placeholder · Copying remains primary.</p>
               </section>
             </div>
             <div className="execution-control">
@@ -490,18 +501,25 @@ export default function Dashboard() {
             </div>
             <div className="execution-panels">
               <section className={`strategy-panel active`}>
-                <div className="strategy-panel-header">
-                  <h3>Paper Execution</h3>
-                  <span className="strategy-status">Enabled</span>
-                </div>
-            <p className="strategy-panel-body">Simulation enabled · Paper routing only.</p>
+            <div className="strategy-panel-header">
+              <h3>Paper Execution</h3>
+              <span className="strategy-status-pill">ENABLED</span>
+            </div>
+            <div className="module-row">
+              <span>Amount</span>
+              <strong>${paperAmount.toFixed(2)}</strong>
+            </div>
+            <div className="module-row">
+              <span>Routing</span>
+              <strong>Simulated</strong>
+            </div>
               </section>
               <section className="strategy-panel disabled">
                 <div className="strategy-panel-header">
                   <h3>Live Execution</h3>
                   <span className="strategy-status">Locked</span>
                 </div>
-            <p className="strategy-panel-body">LOCKED — Live trading disabled in this MVP.</p>
+            <p className="strategy-panel-body">Live disabled in MVP.</p>
               </section>
             </div>
           </section>
