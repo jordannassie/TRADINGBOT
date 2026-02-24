@@ -2818,26 +2818,68 @@ th {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(255, 255, 255, 0.015);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 14px 24px;
+  background: rgba(255, 255, 255, 0.01);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 16px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 18px;
   border-radius: 0;
   box-shadow: none;
+  flex-wrap: wrap;
+}
+
+.poly-command-bar__left,
+.poly-command-bar__center,
+.poly-command-bar__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .poly-command-group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .poly-command-pill-group {
   display: flex;
   gap: 8px;
+}
+
+.poly-paper-amount label {
+  display: flex;
+  flex-direction: column;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--poly-dim);
+  gap: 4px;
+}
+
+.poly-paper-amount input {
+  border-radius: 8px;
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--poly-text);
+  width: 110px;
+  font-size: 13px;
+  text-align: right;
+}
+
+.poly-simulate-group {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.poly-command-note {
+  margin: 0;
+  font-size: 11px;
+  color: var(--poly-dim);
 }
 
 .poly-status-dot {
@@ -2853,58 +2895,47 @@ th {
   box-shadow: 0 0 8px rgba(255, 64, 85, 0.7);
 }
 
-.poly-advanced {
-  border: 1px solid var(--poly-border);
+.poly-copy-status {
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.poly-advanced summary {
-  padding: 10px 14px;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--poly-dim);
-  display: flex;
-  justify-content: space-between;
-  cursor: pointer;
-}
-
-.poly-advanced-panel {
-  padding: 14px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-}
-.poly-advanced-simulate {
-  grid-column: 1 / -1;
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 4px;
+  min-width: 180px;
 }
-.poly-advanced-simulate-label {
-  font-size: 11px;
-  text-transform: uppercase;
+
+.poly-copy-chip {
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
   letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  display: inline-flex;
+  align-self: flex-start;
+}
+
+.poly-copy-chip--running {
+  color: var(--poly-green);
+  border-color: rgba(0, 200, 122, 0.5);
+}
+
+.poly-copy-chip--stopped {
   color: var(--poly-dim);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  border-color: rgba(255, 255, 255, 0.2);
 }
-.poly-advanced-amount {
-  width: 80px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 6px;
-  padding: 4px 8px;
-  background: rgba(0, 0, 0, 0.3);
-  color: var(--poly-text);
-  font-size: 13px;
-  text-align: right;
+
+.poly-copy-chip--error {
+  color: var(--poly-red);
+  border-color: rgba(255, 64, 85, 0.7);
 }
-.poly-advanced-simulate .poly-pill {
-  width: fit-content;
+
+.poly-copy-detail {
+  margin: 0;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.65);
 }
 .poly-command-status {
   margin: 0;

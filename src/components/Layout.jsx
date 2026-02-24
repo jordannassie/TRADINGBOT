@@ -57,14 +57,6 @@ function TopControlBar() {
 // ─── Layout shell ─────────────────────────────────────────────────────────────
 export default function Layout({ navItems, children }) {
   const [navOpen, setNavOpen] = useState(false);
-  const advancedLinks = [
-    { path: '/btc', label: 'BTC Bot' },
-    { path: '/strategy', label: 'Strategy' },
-    { path: '/traders', label: 'Traders' },
-    { path: '/markets', label: 'Markets' },
-    { path: '/signals', label: 'Signals' },
-  ];
-
   const renderNavLinks = (items, { onClick } = {}) =>
     items.map((item) => (
       <NavLink
@@ -90,10 +82,6 @@ export default function Layout({ navItems, children }) {
             </div>
           </div>
           <nav className="nav-menu desktop-nav">{renderNavLinks(navItems)}</nav>
-          <details className="nav-advanced">
-            <summary>Advanced</summary>
-            <div className="nav-menu advanced">{renderNavLinks(advancedLinks)}</div>
-          </details>
           <div className="sidebar-manager">
             <img src="/nick-profile.jpg" alt="Nick Cross" />
             <div>
@@ -155,10 +143,6 @@ export default function Layout({ navItems, children }) {
         <nav className="nav-menu mobile-nav">
           {renderNavLinks(navItems, { onClick: () => setNavOpen(false) })}
         </nav>
-        <details className="nav-advanced mobile-advanced">
-          <summary>Advanced</summary>
-          <div className="nav-menu advanced">{renderNavLinks(advancedLinks, { onClick: () => setNavOpen(false) })}</div>
-        </details>
       </div>
     </>
   );

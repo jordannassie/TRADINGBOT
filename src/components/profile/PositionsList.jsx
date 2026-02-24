@@ -4,9 +4,9 @@ function formatPnl(value) {
   return `${sign}$${Math.abs(value).toLocaleString()}`;
 }
 
-export default function PositionsList({ positions, type }) {
+export default function PositionsList({ positions, type, emptyMessage }) {
   if (!positions.length) {
-    return <p className="g-empty">No {type} positions.</p>;
+    return <p className="g-empty">{emptyMessage ?? `No ${type} positions.`}</p>;
   }
 
   return (

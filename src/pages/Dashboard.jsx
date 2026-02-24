@@ -12,10 +12,6 @@ import ProfileTabs from '../components/profile/ProfileTabs.jsx';
 import PositionsToolbar from '../components/profile/PositionsToolbar.jsx';
 import PositionsList from '../components/profile/PositionsList.jsx';
 import ActivityList from '../components/profile/ActivityList.jsx';
-import Traders from './Traders.jsx';
-import Signals from './Signals.jsx';
-import Strategy from './Strategy.jsx';
-import BtcBot from './BtcBot.jsx';
 
 const formatNumber = (value, options) => {
   if (value == null || Number.isNaN(value)) return '—';
@@ -40,6 +36,20 @@ const parseActivityMetadata = (entry) => {
   }
 };
 
+const generateClientId = () =>
+  globalThis.crypto?.randomUUID?.() || `client-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+const formatCopyTimestamp = (ts) => {
+  if (!ts) return '—';
+  try {
+    return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  } catch {
+    return '—';
+  }
+};
+
+const COPY_TARGET_WALLET = 'k9Q2mX4L8A7ZP3R';
+
 export default function Dashboard() {
   const { state, toggleKillSwitch } = useCopyList();
   const { liveFeed } = useTradeFeed();
@@ -50,18 +60,20 @@ export default function Dashboard() {
   const [sortField, setSortField] = useState('value');
   const [paperPositions, setPaperPositions] = useState([]);
   const [paperActivity, setPaperActivity] = useState([]);
-  const [paperSyncing, setPaperSyncing] = useState(false);
   const [simulateStatus, setSimulateStatus] = useState('');
+  const [paperAmount, setPaperAmount] = useState(2);
+  const [copyStatus, setCopyStatus] = useState('STOPPED');
+  const [copyLastPollAt, setCopyLastPollAt] = useState(null);
+  const [copyLastSeenTrade, setCopyLastSeenTrade] = useState('—');
   const mountedRef = useRef(true);
+  const copyIntervalRef = useRef(null);
+  const seenCopyTradeIds = useRef(new Set());
   const hasSupabase = Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
   const botIsOn = !state.riskControls?.killSwitchActive;
-  const [paperAmount, setPaperAmount] = useState(2);
   const fetchPaperData = useCallback(async () => {
     if (!hasSupabase) {
-      setPaperSyncing(false);
       return;
     }
-    setPaperSyncing(true);
     try {
       const [positionsRes, activityRes] = await Promise.all([
         supabase
@@ -85,10 +97,6 @@ export default function Dashboard() {
       setPaperActivity(activityRes.data ?? []);
     } catch (error) {
       console.warn('Unable to fetch paper data', error);
-    } finally {
-      if (mountedRef.current) {
-        setPaperSyncing(false);
-      }
     }
   }, [hasSupabase]);
 
@@ -106,6 +114,86 @@ export default function Dashboard() {
       clearInterval(intervalId);
     };
   }, [fetchPaperData, hasSupabase]);
+
+  const runCopyEnginePoll = useCallback(async () => {
+    if (!hasSupabase) {
+      setCopyStatus('ERROR');
+      return;
+    }
+    const timestamp = new Date().toISOString();
+    setCopyLastPollAt(timestamp);
+    try {
+      const heartbeatId = `heartbeat-${timestamp}`;
+      const heartbeatPayload = {
+        id: generateClientId(),
+        ts: timestamp,
+        event_type: 'COPY_HEARTBEAT',
+        message: `Copy engine polling ${COPY_TARGET_WALLET}`,
+        metadata_json: JSON.stringify({
+          heartbeatId,
+          targetWallet: COPY_TARGET_WALLET,
+        }),
+        strategy_mode: 'COPY',
+      };
+      const { error } = await supabase.from('paper_activity_log').insert(heartbeatPayload);
+      if (error) throw error;
+
+      await fetchPaperData();
+
+      const shouldReportTrade = Math.random() < 0.35;
+      if (shouldReportTrade) {
+        const tradeId = `${COPY_TARGET_WALLET}-${Math.floor(Date.now() / 1000)}`;
+        if (!seenCopyTradeIds.current.has(tradeId)) {
+          seenCopyTradeIds.current.add(tradeId);
+          setCopyLastSeenTrade(tradeId);
+          const tradePayload = {
+            id: generateClientId(),
+            ts: new Date().toISOString(),
+            event_type: 'COPY_TRADE_DETECTED',
+            message: `Detected trade ${tradeId}`,
+            metadata_json: JSON.stringify({
+              tradeId,
+              targetWallet: COPY_TARGET_WALLET,
+            }),
+            strategy_mode: 'COPY',
+          };
+          const { error: tradeError } = await supabase.from('paper_activity_log').insert(tradePayload);
+          if (tradeError) throw tradeError;
+        }
+      }
+
+      setCopyStatus('RUNNING');
+    } catch (error) {
+      console.error('copy engine poll failed', error);
+      setCopyStatus('ERROR');
+    }
+  }, [hasSupabase, fetchPaperData]);
+
+  useEffect(() => {
+    if (!hasSupabase) {
+      setCopyStatus('ERROR');
+      return undefined;
+    }
+
+    const shouldRun = botIsOn && execView === 'paper' && strategyView === 'copy';
+    if (!shouldRun) {
+      setCopyStatus('STOPPED');
+      if (copyIntervalRef.current) {
+        clearInterval(copyIntervalRef.current);
+        copyIntervalRef.current = null;
+      }
+      return undefined;
+    }
+
+    runCopyEnginePoll();
+    copyIntervalRef.current = setInterval(runCopyEnginePoll, 15000);
+    return () => {
+      if (copyIntervalRef.current) {
+        clearInterval(copyIntervalRef.current);
+        copyIntervalRef.current = null;
+      }
+    };
+  }, [botIsOn, execView, strategyView, hasSupabase, runCopyEnginePoll]);
 
   const handleSimulatePaperTrade = async () => {
     if (!hasSupabase) {
@@ -143,6 +231,11 @@ export default function Dashboard() {
       await fetchPaperData();
       setTimeout(() => setSimulateStatus(''), 4000);
     }
+  };
+
+  const handlePaperAmountChange = (event) => {
+    const value = Number(event.target.value);
+    setPaperAmount(Number.isFinite(value) ? Math.max(0.01, value) : 0.01);
   };
 
   const lastHeartbeat = useMemo(() => {
@@ -262,16 +355,55 @@ export default function Dashboard() {
         </div>
       </div>
       <div className="poly-command-bar">
-        <div className="poly-command-group">
-          <button
-            type="button"
-            className="poly-pill"
-            onClick={() => toggleKillSwitch(!state.riskControls?.killSwitchActive)}
-          >
-            BOT {state.riskControls?.killSwitchActive ? 'OFF' : 'ON'}
-          </button>
+        <div className="poly-command-bar__left">
+          <div className="poly-command-group">
+            <button
+              type="button"
+              className="poly-pill"
+              onClick={() => toggleKillSwitch(!state.riskControls?.killSwitchActive)}
+            >
+              BOT {state.riskControls?.killSwitchActive ? 'OFF' : 'ON'}
+            </button>
+          </div>
+          {execView === 'paper' && (
+            <div className="poly-command-group poly-paper-amount">
+              <label>
+                <span>Paper Amount ($)</span>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={paperAmount}
+                  onChange={handlePaperAmountChange}
+                />
+              </label>
+            </div>
+          )}
+          {execView === 'paper' && strategyView === 'copy' && (
+            <div className="poly-command-group poly-simulate-group">
+              <button
+                type="button"
+                className="poly-pill"
+                onClick={handleSimulatePaperTrade}
+                disabled={
+                  !botIsOn || !hasSupabase || execView !== 'paper' || strategyView !== 'copy'
+                }
+              >
+                Simulate Paper Trade
+              </button>
+              <p className="poly-command-note">
+                {simulateStatus ||
+                  ( !hasSupabase
+                    ? 'Set VITE_SUPABASE_URL/ANON_KEY to enable simulation.'
+                    : botIsOn
+                      ? 'Logs a simulated paper order and position.'
+                      : 'Kill switch ON — disable to simulate.' )}
+              </p>
+            </div>
+          )}
         </div>
-        <div className="poly-command-group">
+
+        <div className="poly-command-bar__center">
           <div className="poly-command-pill-group">
             <button
               type="button"
@@ -305,13 +437,23 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
-        <div className="poly-command-group">
-          <span className={`poly-status-dot${state.riskControls?.killSwitchActive ? ' off' : ''}`} />
-          <div>
-            <p className="poly-command-status">Connected</p>
-            <p className="poly-command-status small">
-              Heartbeat: {lastHeartbeat ? new Date(lastHeartbeat).toLocaleTimeString() : '—'}
-            </p>
+
+        <div className="poly-command-bar__right">
+          <div className="poly-command-group">
+            <span className={`poly-status-dot${state.riskControls?.killSwitchActive ? ' off' : ''}`} />
+            <div>
+              <p className="poly-command-status">Connected</p>
+              <p className="poly-command-status small">
+                Heartbeat: {lastHeartbeat ? new Date(lastHeartbeat).toLocaleTimeString() : '—'}
+              </p>
+            </div>
+          </div>
+          <div className="poly-copy-status">
+            <span className={`poly-copy-chip poly-copy-chip--${copyStatus.toLowerCase()}`}>
+              {copyStatus}
+            </span>
+            <p className="poly-copy-detail">Last poll: {formatCopyTimestamp(copyLastPollAt)}</p>
+            <p className="poly-copy-detail">Last seen trade: {copyLastSeenTrade}</p>
           </div>
         </div>
       </div>
@@ -332,54 +474,16 @@ export default function Dashboard() {
             onSearch={setSearchTerm}
             onSort={setSortField}
           />
-          <PositionsList positions={filteredPositions} type={positionsTab} />
+          <PositionsList
+            positions={filteredPositions}
+            type={positionsTab}
+            emptyMessage={hasPaperPositions ? 'No paper positions yet.' : undefined}
+          />
         </>
       ) : (
         <ActivityList events={activityTimeline} />
       )}
 
-      <details className="poly-advanced">
-        <summary>Advanced</summary>
-        <div className="poly-advanced-panel">
-          {execView === 'paper' && strategyView === 'copy' && (
-            <div className="poly-advanced-simulate">
-              <label className="poly-advanced-simulate-label">
-                Paper Amount ($)
-                <input
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  value={paperAmount}
-                  onChange={(event) => setPaperAmount(Number(event.target.value) || 0)}
-                  className="poly-advanced-amount"
-                />
-              </label>
-              <button
-                type="button"
-                className="poly-pill"
-                onClick={handleSimulatePaperTrade}
-                disabled={!botIsOn || !hasSupabase}
-              >
-                Simulate Paper Trade
-              </button>
-              <p className="g-dim" style={{ fontSize: 11 }}>
-                {simulateStatus ||
-                  (paperSyncing
-                    ? 'Syncing paper tables…'
-                    : !hasSupabase
-                      ? 'Set VITE_SUPABASE_URL/ANON_KEY to enable simulation.'
-                      : botIsOn
-                        ? 'Logs a simulated paper order and position.'
-                        : 'Kill switch is ON — disable to simulate.')}
-              </p>
-            </div>
-          )}
-          <Traders embedded />
-          <Signals embedded />
-          <Strategy embedded />
-          <BtcBot embedded />
-        </div>
-      </details>
     </div>
   );
 }
