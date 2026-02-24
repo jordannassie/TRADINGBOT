@@ -2876,6 +2876,17 @@ th {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
 }
+.poly-advanced-simulate {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.poly-advanced-simulate .poly-pill {
+  width: fit-content;
+}
 .poly-command-status {
   margin: 0;
   font-size: 12px;
