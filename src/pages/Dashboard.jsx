@@ -49,7 +49,7 @@ const formatCopyTimestamp = (ts) => {
 
 export default function Dashboard() {
   const { state, toggleKillSwitch } = useCopyList();
-  const { setStrategyView, setExecView } = useUI();
+  const { strategyView, setStrategyView, setExecView } = useUI();
   const [mainTab, setMainTab] = useState('positions');
   const [positionsTab, setPositionsTab] = useState('active');
   const [searchTerm, setSearchTerm] = useState('');
@@ -411,6 +411,49 @@ export default function Dashboard() {
             <p className="poly-copy-detail">Last trade: {copyLastSeenTrade}</p>
           </div>
         </div>
+      </div>
+
+      <div className="strategy-control">
+        <span className="strategy-label">Strategy</span>
+        <div className="strategy-pill-group">
+          <button
+            type="button"
+            className={`strategy-pill${strategyView === 'copy' ? ' active' : ''}`}
+            onClick={() => setStrategyView('copy')}
+          >
+            Copying
+          </button>
+          <button
+            type="button"
+            className={`strategy-pill${strategyView === 'arb' ? ' active' : ''}`}
+            onClick={() => setStrategyView('arb')}
+          >
+            Arbitrage
+          </button>
+        </div>
+      </div>
+
+      <div className="strategy-panels">
+        <section className={`strategy-panel${strategyView === 'copy' ? ' active' : ' disabled'}`}>
+          <div className="strategy-panel-header">
+            <h3>Copying Setup</h3>
+            <span className="strategy-status">{strategyView === 'copy' ? 'Active' : 'Paused'}</span>
+          </div>
+          <p className="strategy-panel-body">
+            Paper copy engine watches @k9Q2mX4L8A7ZP3R. Keep BOT ON, Paper selected, and Paper Amount ready to replicate
+            trades.
+          </p>
+        </section>
+        <section className={`strategy-panel${strategyView === 'arb' ? ' active' : ' disabled'}`}>
+          <div className="strategy-panel-header">
+            <h3>Arbitrage Setup</h3>
+            <span className="strategy-status">Coming soon</span>
+          </div>
+          <p className="strategy-panel-body">
+            Arbitrage mode is placeholder-only in this MVP. No live engine is connected yet—switch back to Copying to
+            keep the bot running.
+          </p>
+        </section>
       </div>
 
       <div className="poly-grid">
