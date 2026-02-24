@@ -349,160 +349,180 @@ export default function Dashboard() {
         <span>VITE_SUPABASE_ANON_KEY present? {supabaseAnonPresent ? 'yes' : 'no'}</span>
       </div>
 
-      <div className="poly-command-bar">
-        <div className="poly-command-bar__left">
-          <div className="poly-command-group">
-            <button
-              type="button"
-              className="poly-pill"
-              onClick={() => toggleKillSwitch(!state.riskControls?.killSwitchActive)}
-            >
-              BOT {state.riskControls?.killSwitchActive ? 'OFF' : 'ON'}
-            </button>
-          </div>
-          <div className="poly-command-group poly-paper-amount">
-            <label>
-              <span>Paper Amount ($)</span>
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={paperAmount}
-                onChange={handlePaperAmountChange}
-                disabled={!hasSupabase}
-              />
-            </label>
-          </div>
-          <div className="poly-command-group poly-simulate-group">
-            <button
-              type="button"
-              className="poly-pill"
-              onClick={handleSimulatePaperTrade}
-              disabled={!commandEnabled}
-            >
-              Simulate Paper Trade
-            </button>
-            <p className="poly-command-note">
-              {simulateStatus ||
-                (commandEnabled
-                  ? 'Logs a paper order with the chosen amount.'
-                  : 'Trading disabled until Supabase + kill switch ready.')}
-            </p>
-          </div>
+      <div className="dashboard-shell">
+        <div className="status-bar">
+          <span className="status-pill">{strategyView === 'copy' ? 'Copying' : 'Arbitrage'}</span>
+          <span className="status-pill">{execView === 'paper' ? 'Paper' : 'Live (locked)'}</span>
+          <span className={`status-pill ${botIsOn ? 'status-green' : 'status-red'}`}>
+            Bot {botIsOn ? 'ON' : 'OFF'}
+          </span>
+          <span className="status-pill">
+            {state.riskControls?.killSwitchActive ? 'Kill Switch ACTIVE' : 'Kill Switch STANDBY'}
+          </span>
+          <span className="status-pill">@k9Q2mX4L8A7ZP3R</span>
+          <span className={`status-pill ${hasSupabase ? 'status-green' : 'status-red'}`}>
+            Supabase {hasSupabase ? 'connected' : 'missing'}
+          </span>
+          <span className="status-pill">
+            Wallet {targetWallet ? `${targetWallet.slice(0, 6)}…${targetWallet.slice(-4)}` : 'pending'}
+          </span>
         </div>
 
-        <div className="poly-command-bar__center">
-          <span className="poly-command-note small">PAPER • COPY</span>
-        </div>
-
-        <div className="poly-command-bar__right">
-          <div className="poly-command-group">
-            <span className={`poly-status-dot${botIsOn ? '' : ' off'}`} />
-            <div>
-              <p className="poly-command-status">{botIsOn ? 'Connected' : 'Kill Switch ON'}</p>
-              <p className="poly-command-status small">
-                Target wallet:{' '}
-                {targetWallet || (targetStatus === 'resolving' ? 'Resolving...' : 'Unavailable')}
-              </p>
+        <div className="card-grid">
+          <section className="card execution-card">
+            <div className="card-title">Execution Console</div>
+            <div className="poly-command-bar">
+              <div className="poly-command-bar__left">
+                <div className="poly-command-group">
+                  <button
+                    type="button"
+                    className="poly-pill"
+                    onClick={() => toggleKillSwitch(!state.riskControls?.killSwitchActive)}
+                  >
+                    BOT {state.riskControls?.killSwitchActive ? 'OFF' : 'ON'}
+                  </button>
+                </div>
+                <div className="poly-command-group poly-paper-amount">
+                  <label>
+                    <span>Paper Amount ($)</span>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={paperAmount}
+                      onChange={handlePaperAmountChange}
+                      disabled={!hasSupabase}
+                    />
+                  </label>
+                </div>
+                <div className="poly-command-group poly-simulate-group">
+                  <button
+                    type="button"
+                    className="poly-pill"
+                    onClick={handleSimulatePaperTrade}
+                    disabled={!commandEnabled}
+                  >
+                    Simulate Paper Trade
+                  </button>
+                  <p className="poly-command-note">
+                    {simulateStatus ||
+                      (commandEnabled
+                        ? 'Logs a paper order with the chosen amount.'
+                        : 'Trading disabled until Supabase + kill switch ready.')}
+                  </p>
+                </div>
+              </div>
+              <div className="poly-command-bar__center">
+                <span className="poly-command-note small">PAPER • COPY</span>
+              </div>
+              <div className="poly-command-bar__right">
+                <div className="poly-command-group">
+                  <span className={`poly-status-dot${botIsOn ? '' : ' off'}`} />
+                  <div>
+                    <p className="poly-command-status">{botIsOn ? 'Connected' : 'Kill Switch ON'}</p>
+                    <p className="poly-command-status small">
+                      Target wallet:{' '}
+                      {targetWallet || (targetStatus === 'resolving' ? 'Resolving...' : 'Unavailable')}
+                    </p>
+                  </div>
+                </div>
+                <div className="poly-copy-status">
+                  <span className={`poly-copy-chip poly-copy-chip--${copyStatus.toLowerCase()}`}>{copyStatus}</span>
+                  <p className="poly-copy-detail">Last poll: {formatCopyTimestamp(copyLastPollAt)}</p>
+                  <p className="poly-copy-detail">Last trade: {copyLastSeenTrade}</p>
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="poly-copy-status">
-            <span className={`poly-copy-chip poly-copy-chip--${copyStatus.toLowerCase()}`}>{copyStatus}</span>
-            <p className="poly-copy-detail">Last poll: {formatCopyTimestamp(copyLastPollAt)}</p>
-            <p className="poly-copy-detail">Last trade: {copyLastSeenTrade}</p>
-          </div>
+            <div className="strategy-control">
+              <span className="strategy-label">Strategy</span>
+              <div className="strategy-pill-group">
+                <button
+                  type="button"
+                  className={`strategy-pill${strategyView === 'copy' ? ' active' : ''}`}
+                  onClick={() => setStrategyView('copy')}
+                >
+                  Copying
+                </button>
+                <button
+                  type="button"
+                  className={`strategy-pill${strategyView === 'arb' ? ' active' : ''}`}
+                  onClick={() => setStrategyView('arb')}
+                >
+                  Arbitrage
+                </button>
+              </div>
+            </div>
+            <div className="strategy-panels">
+              <section className={`strategy-panel${strategyView === 'copy' ? ' active' : ' disabled'}`}>
+                <div className="strategy-panel-header">
+                  <h3>Copying Setup</h3>
+                  <span className="strategy-status">{strategyView === 'copy' ? 'Active' : 'Paused'}</span>
+                </div>
+                <p className="strategy-panel-body">
+                  Paper copy engine watches @k9Q2mX4L8A7ZP3R. Keep BOT ON, Paper selected, and Paper Amount ready to
+                  replicate trades.
+                </p>
+              </section>
+              <section className={`strategy-panel${strategyView === 'arb' ? ' active' : ' disabled'}`}>
+                <div className="strategy-panel-header">
+                  <h3>Arbitrage Setup</h3>
+                  <span className="strategy-status">Coming soon</span>
+                </div>
+                <p className="strategy-panel-body">
+                  Arbitrage mode is placeholder-only in this MVP. No live engine is connected yet—switch back to Copying
+                  to keep the bot running.
+                </p>
+              </section>
+            </div>
+            <div className="execution-control">
+              <span className="strategy-label">Execution</span>
+              <div className="strategy-pill-group">
+                <button
+                  type="button"
+                  className={`strategy-pill${execView === 'paper' ? ' active' : ''}`}
+                  onClick={() => setExecView('paper')}
+                >
+                  Paper
+                </button>
+                <button
+                  type="button"
+                  className={`strategy-pill${execView === 'live' ? ' active' : ''}`}
+                  onClick={() => setExecView('live')}
+                  disabled
+                >
+                  Live
+                </button>
+              </div>
+            </div>
+            <div className="execution-panels">
+              <section className={`strategy-panel active`}>
+                <div className="strategy-panel-header">
+                  <h3>Paper Execution</h3>
+                  <span className="strategy-status">Enabled</span>
+                </div>
+                <p className="strategy-panel-body">
+                  Paper execution routes through the simulated copy engine. Keep the kill switch off and Paper selected to
+                  continue.
+                </p>
+              </section>
+              <section className="strategy-panel disabled">
+                <div className="strategy-panel-header">
+                  <h3>Live Execution</h3>
+                  <span className="strategy-status">Locked</span>
+                </div>
+                <p className="strategy-panel-body">
+                  LOCKED — Live is disabled in this MVP. Paper only. No live orders will be placed.
+                </p>
+              </section>
+            </div>
+          </section>
+
+          <section className="card info-card">
+            <div className="card-title">Status &amp; PnL</div>
+            <ProfileHeaderCard />
+            <ProfitLossCard />
+          </section>
         </div>
-      </div>
-
-      <div className="strategy-control">
-        <span className="strategy-label">Strategy</span>
-        <div className="strategy-pill-group">
-          <button
-            type="button"
-            className={`strategy-pill${strategyView === 'copy' ? ' active' : ''}`}
-            onClick={() => setStrategyView('copy')}
-          >
-            Copying
-          </button>
-          <button
-            type="button"
-            className={`strategy-pill${strategyView === 'arb' ? ' active' : ''}`}
-            onClick={() => setStrategyView('arb')}
-          >
-            Arbitrage
-          </button>
-        </div>
-      </div>
-
-      <div className="strategy-panels">
-        <section className={`strategy-panel${strategyView === 'copy' ? ' active' : ' disabled'}`}>
-          <div className="strategy-panel-header">
-            <h3>Copying Setup</h3>
-            <span className="strategy-status">{strategyView === 'copy' ? 'Active' : 'Paused'}</span>
-          </div>
-          <p className="strategy-panel-body">
-            Paper copy engine watches @k9Q2mX4L8A7ZP3R. Keep BOT ON, Paper selected, and Paper Amount ready to replicate
-            trades.
-          </p>
-        </section>
-        <section className={`strategy-panel${strategyView === 'arb' ? ' active' : ' disabled'}`}>
-          <div className="strategy-panel-header">
-            <h3>Arbitrage Setup</h3>
-            <span className="strategy-status">Coming soon</span>
-          </div>
-          <p className="strategy-panel-body">
-            Arbitrage mode is placeholder-only in this MVP. No live engine is connected yet—switch back to Copying to
-            keep the bot running.
-          </p>
-        </section>
-      </div>
-
-      <div className="execution-control">
-        <span className="strategy-label">Execution</span>
-        <div className="strategy-pill-group">
-          <button
-            type="button"
-            className={`strategy-pill${execView === 'paper' ? ' active' : ''}`}
-            onClick={() => setExecView('paper')}
-          >
-            Paper
-          </button>
-          <button
-            type="button"
-            className={`strategy-pill${execView === 'live' ? ' active' : ''}`}
-            onClick={() => setExecView('live')}
-            disabled
-          >
-            Live
-          </button>
-        </div>
-      </div>
-
-      <div className="execution-panels">
-        <section className={`strategy-panel active`}>
-          <div className="strategy-panel-header">
-            <h3>Paper Execution</h3>
-            <span className="strategy-status">Enabled</span>
-          </div>
-          <p className="strategy-panel-body">
-            Paper execution routes through the simulated copy engine. Keep the kill switch off and Paper selected to
-            continue.
-          </p>
-        </section>
-        <section className="strategy-panel disabled">
-          <div className="strategy-panel-header">
-            <h3>Live Execution</h3>
-            <span className="strategy-status">Locked</span>
-          </div>
-          <p className="strategy-panel-body">
-            LOCKED — Live is disabled in this MVP. Paper only. No live orders will be placed.
-          </p>
-        </section>
-      </div>
-
-      <div className="poly-grid">
-        <ProfileHeaderCard />
-        <ProfitLossCard />
       </div>
 
       <ProfileTabs activeTab={mainTab} onChange={setMainTab} />

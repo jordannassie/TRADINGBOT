@@ -1,3 +1,87 @@
+.dashboard-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.status-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.status-pill {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.status-pill.status-green {
+  border-color: rgba(0, 200, 122, 0.6);
+  color: var(--poly-green);
+}
+
+.status-pill.status-red {
+  border-color: rgba(255, 64, 85, 0.6);
+  color: #ff4044;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(12, 16, 22, 0.9);
+  padding: 16px;
+  display:flex;
+  flex-direction:column;
+  gap: 12px;
+}
+
+.card-title {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--poly-dim);
+}
+
+.execution-card .poly-command-bar,
+.info-card .profile-card {
+  border:none;
+  background: transparent;
+  box-shadow:none;
+}
+
+.status-bar-spacing {
+  height:4px;
+}
+
+.card-grid .card.execution-card {
+  grid-column: span 1;
+}
+
+.card-grid .card.info-card {
+  grid-column: span 1;
+}
+
+.env-debug {
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+}
+
 :root {
   color-scheme: dark;
   font-family: 'Space Grotesk', system-ui, sans-serif;
