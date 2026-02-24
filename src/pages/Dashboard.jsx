@@ -350,7 +350,7 @@ export default function Dashboard() {
       </div>
 
       <div className="dashboard-shell">
-        <div className="status-bar">
+        <div className="status-bar no-sticky">
           <span className="status-pill">{strategyView === 'copy' ? 'Copying' : 'Arbitrage'}</span>
           <span className="status-pill">{execView === 'paper' ? 'Paper' : 'Live (locked)'}</span>
           <span className={`status-pill ${botIsOn ? 'status-green' : 'status-red'}`}>
