@@ -61,6 +61,7 @@ export default function Dashboard() {
   const [copyStatus, setCopyStatus] = useState('STOPPED');
   const [copyLastPollAt, setCopyLastPollAt] = useState(null);
   const [copyLastSeenTrade, setCopyLastSeenTrade] = useState('—');
+  const [clobPingStatus, setClobPingStatus] = useState({ status: 'error', code: undefined });
   const [targetWallet, setTargetWallet] = useState('');
   const [targetStatus, setTargetStatus] = useState('resolving');
   const seenCopyTradeIds = useRef(new Set());
@@ -82,6 +83,32 @@ export default function Dashboard() {
     setStrategyView('copy');
     setExecView('paper');
   }, [setStrategyView, setExecView]);
+
+  useEffect(() => {
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
+    if (!anonKey) {
+      setClobPingStatus({ status: 'error' });
+      return;
+    }
+    const controller = new AbortController();
+    fetch('https://jyhfffqximlbhlaarozs.supabase.co/functions/v1/clob-ping', {
+      method: 'GET',
+      signal: controller.signal,
+      headers: {
+        apikey: anonKey,
+        authorization: `Bearer ${anonKey}`,
+      },
+    })
+      .then((res) => {
+        if (res.ok) {
+          setClobPingStatus({ status: 'connected' });
+        } else {
+          setClobPingStatus({ status: 'error', code: res.status });
+        }
+      })
+      .catch(() => setClobPingStatus({ status: 'error' }));
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     const stored = loadSeenTradeIds();
@@ -528,6 +555,17 @@ export default function Dashboard() {
             <div className="card-title">Status &amp; PnL</div>
             <ProfileHeaderCard />
             <ProfitLossCard />
+          </section>
+          <section className="card status-card">
+            <div className="card-title">CLOB Connection Status</div>
+            <div className="module-row">
+              <span>CLOB</span>
+              <strong className={clobPingStatus.status === 'connected' ? 'status-green-text' : 'status-red-text'}>
+                {clobPingStatus.status === 'connected'
+                  ? 'Connected'
+                  : `Error${clobPingStatus.code ? ` ${clobPingStatus.code}` : ''}`}
+              </strong>
+            </div>
           </section>
         </div>
       </div>

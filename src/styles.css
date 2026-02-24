@@ -77,6 +77,19 @@
   color: var(--poly-dim);
 }
 
+.status-card strong {
+  font-size: 14px;
+  letter-spacing: 0.2em;
+}
+
+.status-green-text {
+  color: var(--poly-green);
+}
+
+.status-red-text {
+  color: #ff4044;
+}
+
 .execution-card .poly-command-bar,
 .info-card .profile-card {
   border:none;
