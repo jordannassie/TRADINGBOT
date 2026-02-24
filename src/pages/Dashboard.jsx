@@ -8,7 +8,7 @@ import PositionsToolbar from '../components/profile/PositionsToolbar.jsx';
 import PositionsList from '../components/profile/PositionsList.jsx';
 import ActivityList from '../components/profile/ActivityList.jsx';
 import { fetchWalletTrades, loadSeenTradeIds, persistSeenTradeIds, resolveTargetWallet, TARGET_TRADER_HANDLE } from '../services/copyEngine.js';
-import { supabase } from '../services/supabaseClient.js';
+import { supabase, supabaseConfigured } from '../services/supabaseClient.js';
 import { routeOrder } from '../services/executionRouter.js';
 
 const POSITION_SORT_FIELD = 'value';
@@ -65,9 +65,15 @@ export default function Dashboard() {
   const [targetStatus, setTargetStatus] = useState('resolving');
   const seenCopyTradeIds = useRef(new Set());
   const copyIntervalRef = useRef(null);
-  const supabaseUrlPresent = Boolean(import.meta.env.VITE_SUPABASE_URL);
-  const supabaseAnonPresent = Boolean(import.meta.env.VITE_SUPABASE_ANON_KEY);
-  const hasSupabase = supabaseUrlPresent && supabaseAnonPresent;
+  const supabaseUrlRaw = import.meta.env.VITE_SUPABASE_URL ?? '';
+  const supabaseUrlInvalid = Boolean(supabaseUrlRaw.length && !supabaseUrlRaw.toLowerCase().startsWith('http'));
+  const supabaseUrlMissing = !supabaseUrlRaw;
+  const hasSupabase = supabaseConfigured;
+  const supabaseBannerMessage = supabaseConfigured
+    ? ''
+    : supabaseUrlInvalid
+      ? 'Supabase URL must begin with "http(s)://" before data will load.'
+      : 'Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Netlify before trading starts.';
   const botIsOn = !state.riskControls?.killSwitchActive;
   const commandEnabled = hasSupabase && botIsOn;
 
@@ -328,11 +334,8 @@ export default function Dashboard() {
 
   return (
     <div className="page-stack control-center">
-      {!hasSupabase && (
-        <div className="kill-switch-banner">
-          Supabase env vars are missing — trading controls disabled until VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
-          are configured.
-        </div>
+      {!hasSupabase && supabaseBannerMessage && (
+        <div className="kill-switch-banner">{supabaseBannerMessage}</div>
       )}
       <div className="t-page-header">
         <div>
