@@ -458,20 +458,14 @@ export default function Dashboard() {
                   <h3>Copying Setup</h3>
                   <span className="strategy-status">{strategyView === 'copy' ? 'Active' : 'Paused'}</span>
                 </div>
-                <p className="strategy-panel-body">
-                  Paper copy engine watches @k9Q2mX4L8A7ZP3R. Keep BOT ON, Paper selected, and Paper Amount ready to
-                  replicate trades.
-                </p>
+            <p className="strategy-panel-body">Monitoring @k9Q2mX4L8A7ZP3R · BOT on + Paper to copy.</p>
               </section>
               <section className={`strategy-panel${strategyView === 'arb' ? ' active' : ' disabled'}`}>
                 <div className="strategy-panel-header">
                   <h3>Arbitrage Setup</h3>
                   <span className="strategy-status">Coming soon</span>
                 </div>
-                <p className="strategy-panel-body">
-                  Arbitrage mode is placeholder-only in this MVP. No live engine is connected yet—switch back to Copying
-                  to keep the bot running.
-                </p>
+            <p className="strategy-panel-body">Arbitrage coming soon · Copying is the active route.</p>
               </section>
             </div>
             <div className="execution-control">
@@ -500,19 +494,14 @@ export default function Dashboard() {
                   <h3>Paper Execution</h3>
                   <span className="strategy-status">Enabled</span>
                 </div>
-                <p className="strategy-panel-body">
-                  Paper execution routes through the simulated copy engine. Keep the kill switch off and Paper selected to
-                  continue.
-                </p>
+            <p className="strategy-panel-body">Simulation enabled · Paper routing only.</p>
               </section>
               <section className="strategy-panel disabled">
                 <div className="strategy-panel-header">
                   <h3>Live Execution</h3>
                   <span className="strategy-status">Locked</span>
                 </div>
-                <p className="strategy-panel-body">
-                  LOCKED — Live is disabled in this MVP. Paper only. No live orders will be placed.
-                </p>
+            <p className="strategy-panel-body">LOCKED — Live trading disabled in this MVP.</p>
               </section>
             </div>
           </section>
