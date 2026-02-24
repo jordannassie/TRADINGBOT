@@ -1,44 +1,357 @@
 import { Link } from 'react-router-dom';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useCopyList } from '../context/CopyListContext.jsx';
 import { useTradeFeed } from '../context/TradeFeedContext';
 import useLeaderboard from '../hooks/useLeaderboard.js';
-import { dailyPnL, equityCurve, leaderboard, openPositions } from '../data/analyticsMocks';
+import { dailyPnL, leaderboard, openPositions } from '../data/analyticsMocks';
 import { fallbackTimeline } from '../data/signalsTimeline';
 
-const maxEquity = Math.max(...equityCurve.map((point) => point.value));
-const maxPnL = Math.max(...dailyPnL.map((item) => Math.abs(item.value)));
-
+// ─── Existing derived constants (unchanged) ───────────────────────────────────
 const timelineSorter = (a, b) => new Date(b.timestamp) - new Date(a.timestamp);
+const netMockPnL = dailyPnL.reduce((s, b) => s + b.value, 0);
+const mockPaperToday = dailyPnL[dailyPnL.length - 1]?.value ?? 0;
 
-const TimelineItem = ({ event }) => (
-  <article className="timeline-item">
-    <div className="timeline-dot" aria-hidden="true" />
-    <div className="timeline-body">
-      <p className="mono">{new Date(event.timestamp).toLocaleString()}</p>
-      <div className="timeline-topline">
-        <strong>{event.trader}</strong>
-        <span className="fine">{event.market}</span>
+// ─── UI-only formatters (display only, no logic changes) ─────────────────────
+function fmtPnl(val) {
+  if (val == null) return '—';
+  const sign = val >= 0 ? '+' : '';
+  return `${sign}$${Math.abs(val).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+}
+
+function fmtTs(ts) {
+  if (!ts) return '—';
+  try { return new Date(ts).toLocaleString(); } catch { return String(ts); }
+}
+
+// ─── Presentational: Sticky Header Bar ───────────────────────────────────────
+function StickyHeaderBar({ strategyView, setStrategyView, execView, setExecView, killSwitchActive, leaderboardMsg }) {
+  return (
+    <div className="g-sticky-bar">
+      <div className="g-sticky-left">
+        <div className="g-toggle-group">
+          <button
+            className={`g-toggle-btn${strategyView === 'copy' ? ' g-toggle-active' : ''}`}
+            onClick={() => setStrategyView('copy')}
+          >
+            Copy Trading
+          </button>
+          <button
+            className={`g-toggle-btn${strategyView === 'arb' ? ' g-toggle-active' : ''}`}
+            onClick={() => setStrategyView('arb')}
+          >
+            Arbitrage
+          </button>
+        </div>
+        <div className="g-toggle-group">
+          <button
+            className={`g-toggle-btn${execView === 'paper' ? ' g-toggle-active' : ''}`}
+            onClick={() => setExecView('paper')}
+          >
+            Paper
+          </button>
+          <button
+            className={`g-toggle-btn g-toggle-live${execView === 'live' ? ' g-toggle-active-live' : ''}`}
+            onClick={() => setExecView('live')}
+          >
+            Live
+          </button>
+        </div>
+        <span className="g-view-label">
+          {strategyView === 'copy' ? 'Copy' : 'Arb'} · {execView === 'paper' ? 'Paper' : 'Live'}
+        </span>
       </div>
-      <p className="timeline-action">
-        <span className="tag-pill">{event.action}</span>
-        <span className="timeline-reason">{event.reason}</span>
-      </p>
-      <div className="timeline-meta">
-        <span>Position {event.positionSize || '—'}</span>
-        <span>Strategy {event.strategy}</span>
+      <div className="g-sticky-right">
+        {leaderboardMsg && (
+          <span className="g-heartbeat-text">{leaderboardMsg}</span>
+        )}
+        <span className={`g-status-dot${killSwitchActive ? ' g-status-halted' : ' g-status-ok'}`} />
+        <span className="g-status-text">
+          {killSwitchActive ? 'Kill switch ON' : 'Connected'}
+        </span>
       </div>
     </div>
-  </article>
-);
+  );
+}
 
+// ─── Presentational: PnL Summary Bar ─────────────────────────────────────────
+function PnlSummaryBar({ paperToday, paper7d, liveToday, live7d }) {
+  return (
+    <div className="g-pnl-bar">
+      <div className="g-pnl-group">
+        <span className="g-pnl-label">Paper Today</span>
+        <span className={`g-pnl-val${paperToday >= 0 ? ' g-pos' : ' g-neg'}`}>
+          {fmtPnl(paperToday)}
+        </span>
+      </div>
+      <div className="g-pnl-group">
+        <span className="g-pnl-label">Paper 7D</span>
+        <span className={`g-pnl-val${paper7d >= 0 ? ' g-pos' : ' g-neg'}`}>
+          {fmtPnl(paper7d)}
+        </span>
+      </div>
+      <div className="g-pnl-divider" />
+      <div className="g-pnl-group">
+        <span className="g-pnl-label g-pnl-label--dim">Live Today</span>
+        <span className={`g-pnl-val g-pnl-val--sm${liveToday != null ? (liveToday >= 0 ? ' g-pos' : ' g-neg') : ' g-dim'}`}>
+          {fmtPnl(liveToday)}
+        </span>
+      </div>
+      <div className="g-pnl-group">
+        <span className="g-pnl-label g-pnl-label--dim">Live 7D</span>
+        <span className={`g-pnl-val g-pnl-val--sm${live7d != null ? (live7d >= 0 ? ' g-pos' : ' g-neg') : ' g-dim'}`}>
+          {fmtPnl(live7d)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Presentational: Active Positions Table ───────────────────────────────────
+// Consumes existing `openPositions` from analyticsMocks — no data changes.
+function PositionsTable({ positions, strategyView, execView }) {
+  if (!positions || positions.length === 0) {
+    return <p className="g-empty">No active positions</p>;
+  }
+  return (
+    <div className="g-table-wrap">
+      <table className="g-table">
+        <thead>
+          <tr>
+            <th>Trader</th>
+            <th>Market</th>
+            <th>Notional</th>
+            <th>Status</th>
+            <th>Mode</th>
+          </tr>
+        </thead>
+        <tbody>
+          {positions.map((pos, i) => (
+            <tr key={pos.market ?? i}>
+              <td className="g-bold">{pos.trader}</td>
+              <td className="g-market-cell">{pos.market}</td>
+              <td className="g-mono">{pos.notional}</td>
+              <td>
+                <span className={`g-tag${pos.status === 'Active hedge' ? ' g-tag--active' : ' g-tag--watch'}`}>
+                  {pos.status}
+                </span>
+              </td>
+              <td>
+                <span className="g-tag g-tag--mode">
+                  {strategyView.toUpperCase()} · {execView.toUpperCase()}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── Presentational: Closed Trades Table ─────────────────────────────────────
+// Consumes existing `liveFeed` from useTradeFeed and `leaderboard` from analyticsMocks.
+function TradesTable({ liveFeed, execView }) {
+  if (liveFeed.length > 0) {
+    return (
+      <div className="g-table-wrap">
+        <table className="g-table">
+          <thead>
+            <tr>
+              <th>Market</th>
+              <th>Side</th>
+              <th>Price</th>
+              <th>Size</th>
+              <th>PnL</th>
+              <th>Mode</th>
+            </tr>
+          </thead>
+          <tbody>
+            {liveFeed.map((trade) => (
+              <tr key={trade.id}>
+                <td className="g-market-cell">{trade.market}</td>
+                <td>
+                  <span className={`g-side${trade.side === 'buy' ? ' g-side--buy' : ' g-side--sell'}`}>
+                    {trade.side.toUpperCase()}
+                  </span>
+                </td>
+                <td className="g-mono">{trade.price.toFixed(3)}</td>
+                <td className="g-mono">{trade.size}</td>
+                <td className={`g-mono${trade.pnl >= 0 ? ' g-pos' : ' g-neg'}`}>
+                  {trade.pnl >= 0 ? '+' : ''}{trade.pnl.toFixed(2)}
+                </td>
+                <td>
+                  <span className="g-tag g-tag--mode">LIVE</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+  // No live fills yet — show leaderboard reference table
+  return (
+    <div className="g-table-wrap">
+      <table className="g-table">
+        <thead>
+          <tr>
+            <th>Trader</th>
+            <th>Handle</th>
+            <th>ROI</th>
+            <th>Volatility</th>
+            <th>Mode</th>
+          </tr>
+        </thead>
+        <tbody>
+          {leaderboard.map((item, i) => (
+            <tr key={item.trader ?? i}>
+              <td className="g-bold">{item.trader}</td>
+              <td className="g-mono g-dim">{item.handle}</td>
+              <td className={`g-mono${item.roi >= 0 ? ' g-pos' : ' g-neg'}`}>
+                {item.roi >= 0 ? '+' : ''}{item.roi}%
+              </td>
+              <td className="g-mono g-dim">{item.volatility}</td>
+              <td>
+                <span className="g-tag g-tag--mode">COPY · {execView.toUpperCase()}</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="g-table-note">Showing leaderboard reference — live fills appear here once trades execute.</p>
+    </div>
+  );
+}
+
+// ─── Presentational: Automation Panel (collapsible) ──────────────────────────
+// Reads from existing state.riskControls — no new data fetching.
+function AutomationPanel({ strategyView, state, open, onToggle }) {
+  const { killSwitchActive, dailyLossLimit, exposureCap } = state.riskControls ?? {};
+  return (
+    <div className="g-panel">
+      <button className="g-panel-toggle" onClick={onToggle} aria-expanded={open}>
+        <span className="g-panel-toggle-label">
+          {strategyView === 'copy' ? '⚙  Trader Monitor' : '⚙  Edge Monitor'}
+        </span>
+        <span className={`g-chevron${open ? ' g-chevron--open' : ''}`}>▾</span>
+      </button>
+      {open && (
+        <div className="g-panel-body">
+          {strategyView === 'copy' ? (
+            <div className="g-panel-grid">
+              <div className="g-panel-item">
+                <span className="g-panel-label">Active traders</span>
+                <span className="g-panel-val">{state.active.length}</span>
+              </div>
+              <div className="g-panel-item">
+                <span className="g-panel-label">Vetted traders</span>
+                <span className="g-panel-val">{state.vetted.length}</span>
+              </div>
+              <div className="g-panel-item">
+                <span className="g-panel-label">Kill switch</span>
+                <span className={`g-panel-val${killSwitchActive ? ' g-neg' : ' g-pos'}`}>
+                  {killSwitchActive ? 'Active' : 'Standby'}
+                </span>
+              </div>
+              <div className="g-panel-item">
+                <span className="g-panel-label">Daily loss limit</span>
+                <span className="g-panel-val">${dailyLossLimit?.toLocaleString() ?? '—'}</span>
+              </div>
+              <div className="g-panel-item">
+                <span className="g-panel-label">Exposure cap</span>
+                <span className="g-panel-val">${exposureCap?.toLocaleString() ?? '—'}</span>
+              </div>
+              <div className="g-panel-item">
+                <span className="g-panel-label">Signals logged</span>
+                <span className="g-panel-val">{state.auditLog.length}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="g-panel-grid">
+              <div className="g-panel-item">
+                <span className="g-panel-label">Strategy</span>
+                <span className="g-panel-val">Dutch-book arb</span>
+              </div>
+              <div className="g-panel-item">
+                <span className="g-panel-label">Markets</span>
+                <span className="g-panel-val">BTC Up or Down</span>
+              </div>
+              <div className="g-panel-item">
+                <span className="g-panel-label">Kill switch</span>
+                <span className={`g-panel-val${killSwitchActive ? ' g-neg' : ' g-pos'}`}>
+                  {killSwitchActive ? 'Active' : 'Standby'}
+                </span>
+              </div>
+              <div className="g-panel-item">
+                <span className="g-panel-label">Partial fill</span>
+                <span className="g-panel-val">Auto-flatten</span>
+              </div>
+              <div className="g-panel-item">
+                <span className="g-panel-label">Config source</span>
+                <span className="g-panel-val">Supabase</span>
+              </div>
+              <div className="g-panel-item">
+                <span className="g-panel-label">Execution</span>
+                <span className="g-panel-val">CLOB client</span>
+              </div>
+            </div>
+          )}
+          <div className="g-panel-links">
+            <Link to="/settings" className="g-link">Risk settings ↗</Link>
+            <Link to="/strategy" className="g-link">Playbook ↗</Link>
+            {strategyView === 'arb' && (
+              <Link to="/btc" className="g-link">BTC Bot dashboard ↗</Link>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Presentational: Activity Log ────────────────────────────────────────────
+// Consumes existing state.auditLog / fallbackTimeline — no data changes.
+function ActivityLog({ timeline }) {
+  if (!timeline || timeline.length === 0) {
+    return <p className="g-empty">No activity logged yet.</p>;
+  }
+  return (
+    <div className="g-activity-log">
+      {timeline.map((event) => (
+        <div key={event.id} className="g-activity-row">
+          <span className="g-activity-ts g-mono g-dim">{fmtTs(event.timestamp)}</span>
+          <span className={`g-tag${event.action === 'Copied' ? ' g-tag--active' : ' g-tag--watch'}`}>
+            {event.action}
+          </span>
+          <span className="g-activity-trader g-bold">{event.trader}</span>
+          <span className="g-activity-market g-dim">{event.market}</span>
+          <span className="g-activity-reason g-dim">{event.reason}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Main Dashboard Component ─────────────────────────────────────────────────
 export default function Dashboard() {
+  // ── Existing hooks (unchanged) ───────────────────────────────────────────────
   const { state } = useCopyList();
   const { status, error } = useLeaderboard();
   const { dailyPnL: liveDailyPnL, equityCurve: liveTradeEquity, liveFeed } = useTradeFeed();
-  const totalActive = state.active.length;
-  const totalVetted = state.vetted.length;
-  const signalsLogged = state.auditLog.length;
+
+  // ── UI-only state (no backend changes) ───────────────────────────────────────
+  const [strategyView, setStrategyView] = useState('copy');
+  const [execView, setExecView] = useState('paper');
+  const [automationOpen, setAutomationOpen] = useState(false);
+
+  // ── Existing derived values (unchanged) ──────────────────────────────────────
+  const killSwitchActive = state.riskControls?.killSwitchActive;
+
+  const leaderboardMsg =
+    status === 'loading' ? 'Syncing leaderboard...'
+    : status === 'error' ? `Leaderboard error: ${error?.message ?? 'unknown'}`
+    : status === 'success' ? 'Live leaderboard synced'
+    : null;
 
   const timeline = useMemo(() => {
     const rawEvents = state.auditLog.length ? state.auditLog : fallbackTimeline;
@@ -53,252 +366,86 @@ export default function Dashboard() {
         market: event.market || event.detail || 'Unknown market',
       }))
       .sort(timelineSorter)
-      .slice(0, 3);
+      .slice(0, 10);
   }, [state.auditLog]);
 
-  const netPnL = dailyPnL.reduce((sum, bar) => sum + bar.value, 0);
-  const liveDailyValue = liveFeed.length ? liveDailyPnL : null;
-  const effectiveDaily = liveDailyValue ?? netPnL;
-  const hasLiveEquity = liveTradeEquity.length > 0;
-  const equityPoints = hasLiveEquity ? liveTradeEquity : equityCurve;
-  const maxEquityValue = Math.max(1, ...equityPoints.map((point) => Math.abs(point.value)));
-  const killSwitchActive = state.riskControls?.killSwitchActive;
-  const statusMessage =
-    status === 'idle'
-      ? null
-      : status === 'loading'
-      ? 'Loading live leaderboard...'
-      : status === 'error'
-      ? `Error loading leaderboard: ${error?.message || 'Unknown'}`
-      : 'Live leaderboard synced';
+  // ── PnL summary values (display only) ────────────────────────────────────────
+  const paperToday = mockPaperToday;
+  const paper7d = netMockPnL;
+  const liveToday = liveFeed.length ? liveDailyPnL : null;
+  const live7d = liveTradeEquity.length
+    ? liveTradeEquity[liveTradeEquity.length - 1]?.value ?? null
+    : null;
 
   return (
-    <div className="page-stack">
-      <header className="top-bar">
-        <div>
-          <p className="eyebrow">Analytics hub</p>
-          <h1>Polymarket trading bot · v0.1</h1>
-        </div>
-        <div className="status-pill">
-          <span className="pulse" />
-          Connected
-        </div>
-      </header>
-      {statusMessage && <div className="status-message">{statusMessage}</div>}
+    <div className="page-stack g-dashboard">
+      {/* ── A) Sticky header: strategy + execution toggles + status ── */}
+      <StickyHeaderBar
+        strategyView={strategyView}
+        setStrategyView={setStrategyView}
+        execView={execView}
+        setExecView={setExecView}
+        killSwitchActive={killSwitchActive}
+        leaderboardMsg={leaderboardMsg}
+      />
 
-      <section className="glance-strip">
-        <article className="glance-card">
-          <p className="metric-label">Active traders</p>
-          <p className="metric-value">{totalActive}</p>
-          <p className="metric-sub">Mirrored right now</p>
-        </article>
-        <article className="glance-card">
-          <p className="metric-label">Daily PnL</p>
-          <p className="metric-value">
-            {effectiveDaily >= 0 ? `+${effectiveDaily.toLocaleString()}` : effectiveDaily.toLocaleString()}
-          </p>
-          <p className="metric-sub">Latest 14 days</p>
-        </article>
-        <article className="glance-card">
-          <p className="metric-label">Signals logged</p>
-          <p className="metric-value">{signalsLogged}</p>
-          <p className="metric-sub">Audit ready</p>
-        </article>
-        <article className="glance-card">
-          <p className="metric-label">Kill switch</p>
-          <p className="metric-value">{killSwitchActive ? 'Active' : 'Standby'}</p>
-          <p className="metric-sub">
-            {killSwitchActive ? 'Copying paused' : 'Ready to pause'}
-          </p>
-        </article>
-      </section>
+      {/* Kill switch banner (existing, unchanged) */}
       {killSwitchActive && (
         <div className="kill-switch-banner">
-          Kill switch is active and copying is currently paused. Toggle it in Settings when you are
-          ready.
+          Kill switch is active — copying is paused. Toggle it in Settings when you are ready.
         </div>
       )}
 
-      <section className="cta-banner">
-        <div>
-          <p className="eyebrow">Capital plan</p>
-          <h2>See our copy/arbitrage plan</h2>
+      {/* ── Top metrics: PnL summary bar ── */}
+      <PnlSummaryBar
+        paperToday={paperToday}
+        paper7d={paper7d}
+        liveToday={liveToday}
+        live7d={live7d}
+      />
+
+      {/* ── A) Active Positions (primary, top) ── */}
+      <section className="g-section">
+        <div className="g-section-header">
+          <h2 className="g-section-title">Active Positions</h2>
+          <span className="g-section-meta">
+            {strategyView === 'copy' ? 'Copy trading — monitored bets' : 'Arbitrage — open legs'}
+          </span>
         </div>
-        <Link to="/strategy" className="primary-btn">
-          View strategy
-        </Link>
+        <PositionsTable
+          positions={openPositions}
+          strategyView={strategyView}
+          execView={execView}
+        />
       </section>
 
-      <section className="cta-banner">
-        <div>
-          <p className="eyebrow">Capital plan</p>
-          <h2>See our copy/arbitrage plan</h2>
+      {/* ── B) Closed Trades ── */}
+      <section className="g-section">
+        <div className="g-section-header">
+          <h2 className="g-section-title">Closed Trades</h2>
+          <span className="g-section-meta">
+            {liveFeed.length > 0 ? `${liveFeed.length} live fills` : 'Leaderboard reference (no fills yet)'}
+          </span>
+          <Link to="/results" className="g-link">Full archive ↗</Link>
         </div>
-        <Link to="/strategy" className="primary-btn">
-          View strategy
-        </Link>
+        <TradesTable liveFeed={liveFeed} execView={execView} />
       </section>
 
-      <section className="grid analytics-grid">
-        <article className="card chart-card">
-          <div className="section-header">
-            <div>
-              <p className="eyebrow">Equity curve</p>
-              <h3>Recent trend</h3>
-            </div>
-            <span className="fine">30-day mock history</span>
-          </div>
-          <div className="chart-sparkline" aria-label="Equity curve placeholder">
-          {equityPoints.map((value, index) => (
-            <span
-              key={`equity-${index}`}
-              style={{ height: `${(value.value / maxEquityValue) * 100}%` }}
-              aria-label={`Point ${index + 1}`}
-            />
-          ))}
-          </div>
-          <p className="metric-sub">Historic mock to show slope before live tracking.</p>
-        </article>
+      {/* ── C) Automation Panel (collapsible) ── */}
+      <AutomationPanel
+        strategyView={strategyView}
+        state={state}
+        open={automationOpen}
+        onToggle={() => setAutomationOpen((v) => !v)}
+      />
 
-        <article className="card chart-card">
-          <div className="section-header">
-            <div>
-              <p className="eyebrow">Daily PnL</p>
-              <h3>Rolling 2 weeks</h3>
-            </div>
-            <span className="fine">Net delta: {netPnL.toLocaleString()} USD</span>
-          </div>
-          <div className="daily-pnl" aria-label="Daily PnL placeholder">
-            {dailyPnL.map((bar, index) => (
-              <div className="daily-bar" key={`pnl-${index}`}>
-                <span
-                  className={bar.value >= 0 ? 'bar-positive' : 'bar-negative'}
-                  style={{ height: `${(Math.abs(bar.value) / maxPnL) * 100}%` }}
-                  aria-label={`${bar.label} ${bar.value} dollars`}
-                />
-                <small>{bar.label}</small>
-              </div>
-            ))}
-          </div>
-        </article>
-
-        <article className="card leaderboard-card">
-          <header className="section-header">
-            <div>
-              <p className="eyebrow">Per-trader leaderboard</p>
-              <h3>Copy returns</h3>
-            </div>
-            <span className="fine">Sorted by ROI</span>
-          </header>
-          <ul className="leaderboard-list">
-            {leaderboard.map((item) => (
-              <li key={item.trader}>
-                <div>
-                  <strong>{item.trader}</strong>
-                  <span className="mono">{item.handle}</span>
-                </div>
-                <span className="leaderboard-score">
-                  {item.roi}% ROI
-                  <small>{item.volatility} volatility</small>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </article>
-
-        <article className="card open-positions-card">
-          <header className="section-header">
-            <div>
-              <p className="eyebrow">Open positions</p>
-              <h3>Active bets</h3>
-            </div>
-            <span className="fine">Live copy tracking</span>
-          </header>
-          <div className="table-wrapper">
-            <table className="open-positions-table">
-              <thead>
-                <tr>
-                  <th>Trader</th>
-                  <th>Market</th>
-                  <th>Notional</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {openPositions.map((position) => (
-                  <tr key={position.market}>
-                    <td>{position.trader}</td>
-                    <td>{position.market}</td>
-                    <td>{position.notional}</td>
-                    <td>{position.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </article>
-      </section>
-
-      <section className="card live-feed-card">
-        <header className="section-header">
-          <div>
-            <p className="eyebrow">Live trade feed</p>
-            <h2>Last 5 fills</h2>
-          </div>
-        </header>
-        {liveFeed.length > 0 ? (
-          <ul className="live-feed-list">
-            {liveFeed.map((trade) => (
-              <li key={trade.id}>
-                <div>
-                  <strong>{trade.market}</strong>
-                  <span className="fine">
-                    {trade.side.toUpperCase()} · {trade.size} cards @ {trade.price.toFixed(3)}
-                  </span>
-                </div>
-                <span className={`live-feed-pnl ${trade.pnl >= 0 ? 'positive' : 'negative'}`}>
-                  {trade.pnl >= 0 ? '+' : ''}
-                  {trade.pnl.toFixed(2)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="fine">Waiting for live fills to appear.</p>
-        )}
-      </section>
-
-      <section className="card signals-preview">
-        <header className="section-header">
-          <div>
-            <p className="eyebrow">Signals timeline</p>
-            <h2>Recent execution log</h2>
-          </div>
-          <Link to="/signals" className="link-btn">
-            View all ↗
-          </Link>
-        </header>
-        <div className="timeline">
-          {timeline.map((event) => (
-            <TimelineItem key={event.id} event={event} />
-          ))}
+      {/* ── D) Activity Log ── */}
+      <section className="g-section">
+        <div className="g-section-header">
+          <h2 className="g-section-title">Activity Log</h2>
+          <Link to="/signals" className="g-link">View all signals ↗</Link>
         </div>
-      </section>
-
-      <section className="card strategy-callout">
-        <header className="section-header">
-          <div>
-            <p className="eyebrow">Strategy hub</p>
-            <h2>Playbook + risk rules</h2>
-          </div>
-          <Link to="/strategy" className="link-btn">
-            Visit Strategy page ↗
-          </Link>
-        </header>
-        <p>
-          Head to the Strategy tab for catalyst-specific playbooks, Nick’s notes, and the “How we
-          operate” flow. Keeps the analytics surface clean while routing playbook edits to one place.
-        </p>
+        <ActivityLog timeline={timeline} />
       </section>
     </div>
   );
