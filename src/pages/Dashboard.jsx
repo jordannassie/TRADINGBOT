@@ -49,7 +49,7 @@ const formatCopyTimestamp = (ts) => {
 
 export default function Dashboard() {
   const { state, toggleKillSwitch } = useCopyList();
-  const { strategyView, setStrategyView, setExecView } = useUI();
+  const { strategyView, execView, setStrategyView, setExecView } = useUI();
   const [mainTab, setMainTab] = useState('positions');
   const [positionsTab, setPositionsTab] = useState('active');
   const [searchTerm, setSearchTerm] = useState('');
