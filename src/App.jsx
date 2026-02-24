@@ -9,14 +9,12 @@ import Signals from './pages/Signals.jsx';
 import Results from './pages/Results.jsx';
 import Settings from './pages/Settings.jsx';
 import BtcBot from './pages/BtcBot.jsx';
-import Profile from './pages/Profile.jsx';
 import { CopyListProvider } from './context/CopyListContext.jsx';
 import { TradeFeedProvider } from './context/TradeFeedContext.tsx';
 import { UIProvider } from './context/UIContext.jsx';
 
 const navItems = [
   { path: '/dashboard', label: 'Control Center' },
-  { path: '/profile', label: 'Profile' },
   { path: '/results', label: 'Results' },
   { path: '/settings', label: 'Settings' },
 ];
@@ -73,7 +71,6 @@ export default function App() {
                 <Route path="/traders" element={<Traders />} />
                 <Route path="/markets" element={<Markets />} />
                 <Route path="/signals" element={<Signals />} />
-                <Route path="/profile" element={<Profile />} />
                 <Route path="/results" element={<Results />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
