@@ -2,6 +2,9 @@ import { NavLink } from 'react-router-dom';
 import { useState } from 'react';
 import { useCopyList } from '../context/CopyListContext.jsx';
 
+const supabaseConfigured =
+  Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
+
 // ─── Layout shell ─────────────────────────────────────────────────────────────
 export default function Layout({ navItems, children }) {
   const [navOpen, setNavOpen] = useState(false);
@@ -58,6 +61,13 @@ export default function Layout({ navItems, children }) {
               Menu
             </button>
           </section>
+
+          {!supabaseConfigured && (
+            <div className="env-warning-banner">
+              Supabase env vars are missing — set <code>VITE_SUPABASE_URL</code> and{' '}
+              <code>VITE_SUPABASE_ANON_KEY</code> in Netlify to enable the dashboard data.
+            </div>
+          )}
 
           {children}
         </main>
