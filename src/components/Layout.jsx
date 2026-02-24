@@ -1,58 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useState } from 'react';
 import { useCopyList } from '../context/CopyListContext.jsx';
-import { useUI } from '../context/UIContext.jsx';
-
-// ─── Global sticky control bar (rendered inside every page) ───────────────────
-function TopControlBar() {
-  const { strategyView, setStrategyView, execView, setExecView } = useUI();
-  const { state } = useCopyList();
-  const killSwitchActive = state.riskControls?.killSwitchActive;
-
-  return (
-    <div className="t-control-bar">
-      <div className="t-control-left">
-        <div className="t-toggle-group">
-          <button
-            className={`t-toggle${strategyView === 'copy' ? ' t-toggle--on' : ''}`}
-            onClick={() => setStrategyView('copy')}
-          >
-            Copy Trading
-          </button>
-          <button
-            className={`t-toggle${strategyView === 'arb' ? ' t-toggle--on' : ''}`}
-            onClick={() => setStrategyView('arb')}
-          >
-            Arbitrage
-          </button>
-        </div>
-        <div className="t-toggle-group">
-          <button
-            className={`t-toggle${execView === 'paper' ? ' t-toggle--on' : ''}`}
-            onClick={() => setExecView('paper')}
-          >
-            Paper
-          </button>
-          <button
-            className={`t-toggle t-toggle--live${execView === 'live' ? ' t-toggle--on-live' : ''}`}
-            onClick={() => setExecView('live')}
-          >
-            Live
-          </button>
-        </div>
-        <span className="t-view-pill">
-          {strategyView === 'copy' ? 'COPY' : 'ARB'} • {execView === 'paper' ? 'PAPER' : 'LIVE'}
-        </span>
-      </div>
-      <div className="t-control-right">
-        <span className={`t-status-dot${killSwitchActive ? ' t-status-dot--halt' : ' t-status-dot--ok'}`} />
-        <span className="t-status-label">
-          {killSwitchActive ? 'Kill Switch ON' : 'Connected'}
-        </span>
-      </div>
-    </div>
-  );
-}
 
 // ─── Layout shell ─────────────────────────────────────────────────────────────
 export default function Layout({ navItems, children }) {
@@ -110,9 +58,6 @@ export default function Layout({ navItems, children }) {
               Menu
             </button>
           </section>
-
-          {/* Global sticky control strip (strategy / exec / status) */}
-          <TopControlBar />
 
           {children}
         </main>

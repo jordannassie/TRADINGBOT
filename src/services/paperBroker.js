@@ -8,7 +8,7 @@ const TABLES = {
   activity: 'paper_activity_log',
 };
 
-async function logActivity(eventType, message, metadata = {}, strategyMode) {
+export async function logActivity(eventType, message, metadata = {}, strategyMode) {
   const client = getServerSupabaseClient();
   try {
     await client.from(TABLES.activity).insert({
