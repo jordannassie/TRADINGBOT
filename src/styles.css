@@ -28,6 +28,8 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.8);
+  cursor: default;
+  pointer-events: none;
 }
 
 .status-pill.status-green {
