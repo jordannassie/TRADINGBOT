@@ -61,7 +61,12 @@ export default function Dashboard() {
   const [copyStatus, setCopyStatus] = useState('STOPPED');
   const [copyLastPollAt, setCopyLastPollAt] = useState(null);
   const [copyLastSeenTrade, setCopyLastSeenTrade] = useState('—');
-  const [clobPingStatus, setClobPingStatus] = useState({ status: 'error', code: undefined });
+  const [clobPingStatus, setClobPingStatus] = useState({
+    status: 'error',
+    endpoint: '',
+    httpStatus: undefined,
+    error: '',
+  });
   const [targetWallet, setTargetWallet] = useState('');
   const [targetStatus, setTargetStatus] = useState('resolving');
   const seenCopyTradeIds = useRef(new Set());
@@ -99,14 +104,31 @@ export default function Dashboard() {
         authorization: `Bearer ${anonKey}`,
       },
     })
-      .then((res) => {
+      .then(async (res) => {
+        const { endpoint, status, error } = await res.json().catch(() => ({
+          endpoint: '',
+          status: res.status,
+          error: res.statusText,
+        }));
         if (res.ok) {
-          setClobPingStatus({ status: 'connected' });
+          setClobPingStatus({ status: 'connected', endpoint, httpStatus: status, error: '' });
         } else {
-          setClobPingStatus({ status: 'error', code: res.status });
+          setClobPingStatus({
+            status: 'error',
+            endpoint,
+            httpStatus: status,
+            error: error ?? `HTTP ${res.status}`,
+          });
         }
       })
-      .catch(() => setClobPingStatus({ status: 'error' }));
+      .catch(() =>
+        setClobPingStatus({
+          status: 'error',
+          endpoint: '',
+          httpStatus: undefined,
+          error: 'Network error',
+        }),
+      );
     return () => controller.abort();
   }, []);
 
@@ -559,13 +581,23 @@ export default function Dashboard() {
           <section className="card status-card">
             <div className="card-title">CLOB Connection Status</div>
             <div className="module-row">
-              <span>CLOB</span>
+              <span>Status</span>
               <strong className={clobPingStatus.status === 'connected' ? 'status-green-text' : 'status-red-text'}>
                 {clobPingStatus.status === 'connected'
                   ? 'Connected'
-                  : `Error${clobPingStatus.code ? ` ${clobPingStatus.code}` : ''}`}
+                  : `Error${clobPingStatus.httpStatus ? ` ${clobPingStatus.httpStatus}` : ''}`}
               </strong>
             </div>
+            <div className="module-row">
+              <span>Endpoint</span>
+              <strong>{clobPingStatus.endpoint || '/functions/v1/clob-ping'}</strong>
+            </div>
+            {clobPingStatus.error && (
+              <div className="module-row">
+                <span>Error</span>
+                <strong className="status-red-text">{clobPingStatus.error}</strong>
+              </div>
+            )}
           </section>
         </div>
       </div>
