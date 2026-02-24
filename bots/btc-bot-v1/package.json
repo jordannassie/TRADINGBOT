@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:live": "tsx src/testLive.ts"
   },
   "dependencies": {
     "@polymarket/clob-client": "^5.2.4",

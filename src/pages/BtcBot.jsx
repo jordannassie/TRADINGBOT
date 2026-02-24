@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../services/supabaseClient.js';
 
 const POLL_INTERVAL_MS = 5_000;
-const FUNCTION_URL = '/.netlify/functions/btc-config-update';
 
 const DEFAULT_CONFIG = {
   id: 'default',
@@ -18,20 +17,6 @@ const DEFAULT_CONFIG = {
   maxTradesPerHour: 60,
   updatedAt: null,
 };
-
-// ─── Config update via Netlify function ────────────────────────────────────────
-async function updateConfig(field, value) {
-  const res = await fetch(FUNCTION_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ field, value }),
-  });
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data.error ?? `HTTP ${res.status}`);
-  }
-  return res.json();
-}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatTs(ts) {
@@ -76,12 +61,6 @@ export default function BtcBot() {
   const [lastHeartbeat, setLastHeartbeat] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [saveMsg, setSaveMsg] = useState('');
-
-  // Local editable copies of numeric fields
-  const [minEdgeInput, setMinEdgeInput] = useState('');
-  const [feeBufferInput, setFeeBufferInput] = useState('');
 
   const fetchData = useCallback(async () => {
     try {
@@ -96,8 +75,6 @@ export default function BtcBot() {
 
       if (configRes.data) {
         setConfig(configRes.data);
-        setMinEdgeInput(String(configRes.data.minEdge ?? 0.02));
-        setFeeBufferInput(String(configRes.data.feeBuffer ?? 0.01));
       }
 
       const events = eventsRes.data ?? [];
@@ -130,22 +107,6 @@ export default function BtcBot() {
     const id = setInterval(fetchData, POLL_INTERVAL_MS);
     return () => clearInterval(id);
   }, [fetchData]);
-
-  // ─── Config update helpers ───────────────────────────────────────────────────
-  const applyUpdate = async (field, value) => {
-    setSaving(true);
-    setSaveMsg('');
-    try {
-      await updateConfig(field, value);
-      setSaveMsg(`✓ ${field} updated`);
-      await fetchData();
-    } catch (err) {
-      setSaveMsg(`Error: ${err.message}`);
-    } finally {
-      setSaving(false);
-      setTimeout(() => setSaveMsg(''), 4000);
-    }
-  };
 
   const isLive = config.mode === 'LIVE';
   const ksActive = Boolean(config.killSwitch);
@@ -226,148 +187,65 @@ export default function BtcBot() {
       {ksActive && (
         <div className="kill-switch-banner">
           Kill switch is ACTIVE — bot is not scanning or placing orders.
-          Disable it below to resume.
+          Edit <code>killSwitch</code> in Supabase (<code>btc_bot_config</code>) to resume.
         </div>
       )}
 
-      {/* ── Controls ── */}
+      {/* ── Config (read-only) ── */}
       <section className="card" style={{ padding: '24px 28px' }}>
-        <header className="section-header" style={{ marginBottom: 20 }}>
+        <header className="section-header" style={{ marginBottom: 16 }}>
           <div>
-            <p className="eyebrow">Admin Controls</p>
-            <h2>Bot Configuration</h2>
+            <p className="eyebrow">Configuration</p>
+            <h2>Bot Config</h2>
           </div>
-          {saveMsg && <span className="fine" style={{ color: saveMsg.startsWith('Error') ? '#ff4466' : '#7fff7f' }}>{saveMsg}</span>}
         </header>
 
+        <div className="status-message" style={{ marginBottom: 16 }}>
+          Config is edited in Supabase (<code>btc_bot_config</code> table, row id = "default").
+          Changes apply within ~3 seconds of saving.
+        </div>
+
         <div className="btc-controls-grid">
-          {/* Mode toggle */}
           <div className="btc-control-row">
-            <label className="btc-control-label">
-              <span>Mode</span>
-              <span className="fine">PAPER = simulated, LIVE = real orders</span>
-            </label>
-            <div className="btc-control-actions">
-              <button
-                className={`ghost-btn ${config.mode === 'PAPER' ? 'btc-active-btn' : ''}`}
-                onClick={() => applyUpdate('mode', 'PAPER')}
-                disabled={saving || config.mode === 'PAPER'}
-              >
-                PAPER
-              </button>
-              <button
-                className={`ghost-btn btc-danger-btn ${config.mode === 'LIVE' ? 'btc-active-btn' : ''}`}
-                onClick={() => applyUpdate('mode', 'LIVE')}
-                disabled={saving || config.mode === 'LIVE'}
-              >
-                LIVE
-              </button>
-            </div>
+            <span className="btc-control-label"><span>Mode</span></span>
+            <Badge value={isLive} onLabel="LIVE" offLabel="PAPER" danger={isLive} />
           </div>
-
-          {/* Kill switch */}
           <div className="btc-control-row">
-            <label className="btc-control-label">
-              <span>Kill Switch</span>
-              <span className="fine">ON = stop all scanning immediately</span>
-            </label>
-            <div className="btc-control-actions">
-              <button
-                className={`ghost-btn ${!ksActive ? 'btc-active-btn' : ''}`}
-                onClick={() => applyUpdate('killSwitch', false)}
-                disabled={saving || !ksActive}
-              >
-                Disable (Resume)
-              </button>
-              <button
-                className={`ghost-btn btc-danger-btn ${ksActive ? 'btc-active-btn' : ''}`}
-                onClick={() => applyUpdate('killSwitch', true)}
-                disabled={saving || ksActive}
-              >
-                Enable (Stop)
-              </button>
-            </div>
+            <span className="btc-control-label"><span>Kill Switch</span></span>
+            <Badge value={ksActive} onLabel="Active (halted)" offLabel="Standby (running)" danger={ksActive} />
           </div>
-
-          {/* Execution enabled */}
           <div className="btc-control-row">
-            <label className="btc-control-label">
-              <span>Execution Enabled</span>
-              <span className="fine">Only matters in LIVE mode</span>
-            </label>
-            <div className="btc-control-actions">
-              <button
-                className={`ghost-btn ${execEnabled ? 'btc-active-btn' : ''}`}
-                onClick={() => applyUpdate('executionEnabled', true)}
-                disabled={saving || execEnabled}
-              >
-                Enable
-              </button>
-              <button
-                className={`ghost-btn btc-danger-btn ${!execEnabled ? 'btc-active-btn' : ''}`}
-                onClick={() => applyUpdate('executionEnabled', false)}
-                disabled={saving || !execEnabled}
-              >
-                Disable
-              </button>
-            </div>
+            <span className="btc-control-label"><span>Execution Enabled</span></span>
+            <Badge value={execEnabled} onLabel="Yes" offLabel="No" />
           </div>
-
-          {/* Min edge input */}
           <div className="btc-control-row">
-            <label className="btc-control-label">
-              <span>Min Edge</span>
-              <span className="fine">Minimum effective edge (e.g. 0.02 = 2%)</span>
-            </label>
-            <div className="btc-control-actions" style={{ gap: 8 }}>
-              <input
-                type="number"
-                className="btc-input"
-                value={minEdgeInput}
-                step="0.005"
-                min="0"
-                max="0.5"
-                onChange={(e) => setMinEdgeInput(e.target.value)}
-              />
-              <button
-                className="ghost-btn"
-                onClick={() => applyUpdate('minEdge', parseFloat(minEdgeInput))}
-                disabled={saving}
-              >
-                Save
-              </button>
-            </div>
+            <span className="btc-control-label"><span>Min Edge</span></span>
+            <span className="fine">{((config.minEdge ?? 0) * 100).toFixed(2)}%</span>
           </div>
-
-          {/* Fee buffer input */}
           <div className="btc-control-row">
-            <label className="btc-control-label">
-              <span>Fee Buffer</span>
-              <span className="fine">Deducted from raw edge (e.g. 0.01 = 1%)</span>
-            </label>
-            <div className="btc-control-actions" style={{ gap: 8 }}>
-              <input
-                type="number"
-                className="btc-input"
-                value={feeBufferInput}
-                step="0.005"
-                min="0"
-                max="0.2"
-                onChange={(e) => setFeeBufferInput(e.target.value)}
-              />
-              <button
-                className="ghost-btn"
-                onClick={() => applyUpdate('feeBuffer', parseFloat(feeBufferInput))}
-                disabled={saving}
-              >
-                Save
-              </button>
-            </div>
+            <span className="btc-control-label"><span>Fee Buffer</span></span>
+            <span className="fine">{((config.feeBuffer ?? 0) * 100).toFixed(2)}%</span>
+          </div>
+          <div className="btc-control-row">
+            <span className="btc-control-label"><span>Max USD / Trade</span></span>
+            <span className="fine">${config.maxUsdPerTrade ?? '—'}</span>
+          </div>
+          <div className="btc-control-row">
+            <span className="btc-control-label"><span>Max Open USD</span></span>
+            <span className="fine">${config.maxOpenUsdTotal ?? '—'}</span>
+          </div>
+          <div className="btc-control-row">
+            <span className="btc-control-label"><span>Daily Loss Cap</span></span>
+            <span className="fine">${config.maxDailyLossUsd ?? '—'}</span>
+          </div>
+          <div className="btc-control-row">
+            <span className="btc-control-label"><span>Max Trades / Hour</span></span>
+            <span className="fine">{config.maxTradesPerHour ?? '—'}</span>
           </div>
         </div>
 
         <p className="fine" style={{ marginTop: 16, opacity: 0.6 }}>
-          Config last updated: {formatTs(config.updatedAt)}. Bot polls this every ~3s.
+          Last updated: {formatTs(config.updatedAt)}
         </p>
       </section>
 

@@ -18,13 +18,17 @@ npm install
 # 3. Copy and fill in your .env
 cp .env.example .env
 #    → Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (from your Supabase project)
-#    → Leave POLY_* empty until you want LIVE mode
+#    → Add VITE_POLY_* credentials when ready for LIVE mode
+#    → Keep DRY_RUN=true until you are ready to send real orders
 
-# 4. Run in PAPER mode (safe, simulated)
+# 4. Verify credentials + scanner (no orders placed)
+npm run test:live
+
+# 5. Run in PAPER mode (safe, simulated)
 npm run dev        # auto-restarts on file change (development)
-npm run start      # one-shot run
+npm run start      # production run
 
-# 5. Typecheck only
+# 6. Typecheck only
 npm run typecheck
 ```
 
@@ -35,12 +39,13 @@ npm run typecheck
 | Variable | Required | Description |
 |---|---|---|
 | `SUPABASE_URL` | ✅ | Your Supabase project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Service role key (never expose to browser) |
-| `POLY_API_KEY` | LIVE only | Polymarket CLOB API key |
-| `POLY_API_SECRET` | LIVE only | Polymarket CLOB API secret |
-| `POLY_API_PASSPHRASE` | LIVE only | Polymarket CLOB passphrase |
-| `POLY_PROXY_WALLET` | LIVE only | Your proxy wallet address |
-| `EXECUTION_ENABLED_DEFAULT` | optional | Set `true` to allow LIVE orders from env |
+| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Service role key (stays local, never sent to Netlify) |
+| `VITE_POLY_API_KEY` | LIVE only | Polymarket CLOB API key (same name as main app) |
+| `VITE_POLY_API_SECRET` | LIVE only | Polymarket CLOB API secret |
+| `VITE_POLY_API_PASSPHRASE` | LIVE only | Polymarket CLOB passphrase |
+| `VITE_POLY_PROXY_WALLET` | LIVE only | Your proxy wallet address |
+| `DRY_RUN` | optional | `true` (default) = log only; `false` = real orders |
+| `EXECUTION_ENABLED_DEFAULT` | optional | Extra env-level guard for LIVE execution |
 
 ---
 
@@ -105,12 +110,17 @@ create policy "anon read events" on btc_bot_events for select using (true);
 
 ## Switching to LIVE Mode
 
-1. Set `POLY_*` env vars in `.env`
-2. In Supabase dashboard (or via `/btc` controls): set `mode = LIVE` and `executionEnabled = true`
-3. Disable the kill switch: `killSwitch = false`
-4. Restart the bot
+1. Set `VITE_POLY_*` env vars in `bots/btc-bot-v1/.env`
+2. Set `DRY_RUN=false` in `.env` (default is `true`)
+3. Run `npm run test:live` first — verifies creds + scanner, no orders placed
+4. In Supabase (`btc_bot_config` table, row `id = "default"`):
+   - Set `mode = LIVE`
+   - Set `executionEnabled = true`
+   - Set `killSwitch = false`
+5. Restart the bot — it will pick up config within ~3 seconds
 
-> ⚠️ The bot checks these config values every ~3 seconds, so dashboard changes apply quickly.
+> ⚠️ Config is edited directly in Supabase. The `/btc` dashboard is read-only.
+> ⚠️ `DRY_RUN=false` AND `executionEnabled=true` in Supabase AND `killSwitch=false` — all three must be true for real orders.
 
 ---
 
@@ -175,8 +185,16 @@ src/
 
 ---
 
-## Live Broker Activation Status
+## Live Broker
 
-**Currently: STUBBED.** The `LiveBroker` logs what it *would* do but does not
-place real orders. Full instructions for wiring `ClobClient` are in
-`src/broker/liveBroker.ts`. The `SimBroker` is fully functional.
+`LiveBroker` uses `@polymarket/clob-client` with the same credential pattern as
+`src/services/polymarket.ts` in the main app (same `VITE_POLY_*` env var names).
+
+| `DRY_RUN` | Behaviour |
+|---|---|
+| `true` (default) | Logs "would place order" — no API call |
+| `false` | Calls `ClobClient.createAndPostMarketOrder()` for both YES and NO legs |
+
+Flatten (partial-fill exit) uses `Side.SELL` on the filled leg's token.
+
+Run `npm run test:live` to verify credentials and scanner connectivity without placing orders.
