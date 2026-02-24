@@ -65,7 +65,9 @@ export default function Dashboard() {
   const [targetStatus, setTargetStatus] = useState('resolving');
   const seenCopyTradeIds = useRef(new Set());
   const copyIntervalRef = useRef(null);
-  const hasSupabase = Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
+  const supabaseUrlPresent = Boolean(import.meta.env.VITE_SUPABASE_URL);
+  const supabaseAnonPresent = Boolean(import.meta.env.VITE_SUPABASE_ANON_KEY);
+  const hasSupabase = supabaseUrlPresent && supabaseAnonPresent;
   const botIsOn = !state.riskControls?.killSwitchActive;
   const commandEnabled = hasSupabase && botIsOn;
 
@@ -337,6 +339,10 @@ export default function Dashboard() {
           <span className="t-eyebrow">Control Center</span>
           <h1 className="t-page-title">Paper Copy Engine</h1>
         </div>
+      </div>
+      <div className="env-debug">
+        <span>VITE_SUPABASE_URL present? {supabaseUrlPresent ? 'yes' : 'no'}</span>
+        <span>VITE_SUPABASE_ANON_KEY present? {supabaseAnonPresent ? 'yes' : 'no'}</span>
       </div>
 
       <div className="poly-command-bar">
