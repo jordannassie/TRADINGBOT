@@ -7,8 +7,9 @@
   --poly-bg: #05070d;
   --poly-surface: #0d111a;
   --poly-surface-2: #121a28;
-  --poly-border: rgba(255, 255, 255, 0.08);
-  --poly-border-strong: rgba(255, 255, 255, 0.16);
+  --poly-border: rgba(255, 255, 255, 0.06);
+  --poly-border-strong: rgba(255, 255, 255, 0.12);
+  --poly-card-shadow: 0 6px 12px rgba(0, 0, 0, 0.35);
   --poly-overlay: rgba(16, 23, 40, 0.65);
   --poly-text: #f4f6fb;
   --poly-dim: rgba(244, 246, 251, 0.55);
@@ -2717,15 +2718,15 @@ th {
 }
 /* ===== Shared Polymarket theme ===== */
 .poly-card {
-  background: var(--poly-surface);
+  background: var(--poly-surface-2);
   border: 1px solid var(--poly-border);
   border-radius: 16px;
   padding: 18px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--poly-card-shadow);
 }
 
 .poly-card.flat {
-  box-shadow: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .poly-grid {
@@ -2764,21 +2765,21 @@ th {
 }
 
 .poly-pill {
-  padding: 6px 12px;
+  padding: 5px 11px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.02);
-  color: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.015);
+  color: rgba(255, 255, 255, 0.65);
   font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   cursor: pointer;
 }
 
 .poly-pill.active {
-  border-color: rgba(0, 200, 122, 0.4);
+  border-color: rgba(255, 255, 255, 0.25);
   color: var(--poly-text);
-  background: rgba(0, 200, 122, 0.08);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .poly-toolbar {
@@ -2797,7 +2798,7 @@ th {
 
 .poly-table th,
 .poly-table td {
-  padding: 10px 12px;
+  padding: 8px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -2809,18 +2810,23 @@ th {
   border-bottom: 1px solid var(--poly-border-strong);
 }
 
+.poly-table tbody tr:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.01);
+}
+
 .poly-command-bar {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--poly-surface);
-  border-bottom: 1px solid var(--poly-border);
+  background: var(--poly-surface-2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   padding: 16px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  border-radius: 0 0 16px 16px;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
 }
 
 .poly-command-group {
