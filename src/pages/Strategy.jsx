@@ -52,15 +52,18 @@ const proofLinks = {
   telegram: 'https://t.me/polymarketarb',
 };
 
-export default function Strategy() {
+export default function Strategy({ embedded = false }) {
+  const containerClass = embedded ? 'command-embed' : 'page-stack g-dashboard';
   return (
-    <div className="page-stack g-dashboard">
-      <div className="t-page-header">
-        <div>
-          <span className="t-eyebrow">Strategy</span>
-          <h1 className="t-page-title">Playbooks, capital, and execution flow</h1>
+    <div className={containerClass}>
+      {!embedded && (
+        <div className="t-page-header">
+          <div>
+            <span className="t-eyebrow">Strategy</span>
+            <h1 className="t-page-title">Playbooks, capital, and execution flow</h1>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── Playbooks ── */}
       <section className="g-section">

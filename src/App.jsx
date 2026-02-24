@@ -13,12 +13,7 @@ import { TradeFeedProvider } from './context/TradeFeedContext.tsx';
 import { UIProvider } from './context/UIContext.jsx';
 
 const navItems = [
-  { path: '/dashboard', label: 'Dashboard' },
-  { path: '/btc', label: 'BTC Bot' },
-  { path: '/strategy', label: 'Strategy' },
-  { path: '/traders', label: 'Traders' },
-  { path: '/markets', label: 'Markets' },
-  { path: '/signals', label: 'Signals' },
+  { path: '/dashboard', label: 'Command Center' },
   { path: '/results', label: 'Results' },
   { path: '/settings', label: 'Settings' },
 ];

@@ -19,7 +19,7 @@ const formatExposure = (volume) => {
 };
 const STATUS_ORDER = ['Candidate', 'Vetted', 'Active'];
 
-export default function Traders() {
+export default function Traders({ embedded = false }) {
   // ── Existing wiring (unchanged) ───────────────────────────────────────────────
   const { traders, status } = useLeaderboard();
   const { state, addTrader, removeTrader, updateNote, logEvent } = useCopyList();
@@ -66,15 +66,19 @@ export default function Traders() {
     });
   };
 
+  const containerClass = embedded ? 'command-embed' : 'page-stack g-dashboard';
+
   return (
-    <div className="page-stack g-dashboard">
-      <div className="t-page-header">
-        <div>
-          <span className="t-eyebrow">Trader Discovery</span>
-          <h1 className="t-page-title">Copy List Intelligence</h1>
+    <div className={containerClass}>
+      {!embedded && (
+        <div className="t-page-header">
+          <div>
+            <span className="t-eyebrow">Trader Discovery</span>
+            <h1 className="t-page-title">Copy List Intelligence</h1>
+          </div>
+          <span className="t-page-count">{status === 'loading' ? 'Loading…' : `${traders.length} traders`}</span>
         </div>
-        <span className="t-page-count">{status === 'loading' ? 'Loading…' : `${traders.length} traders`}</span>
-      </div>
+      )}
 
       {/* ── Main leaderboard table ── */}
       {STATUS_ORDER.map((group) => (

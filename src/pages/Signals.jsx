@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useCopyList } from '../context/CopyListContext.jsx';
 import { fallbackTimeline } from '../data/signalsTimeline';
 
-export default function Signals() {
+export default function Signals({ embedded = false }) {
   // ── Existing data wiring (unchanged) ─────────────────────────────────────────
   const { state } = useCopyList();
 
@@ -21,15 +21,19 @@ export default function Signals() {
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   }, [state.auditLog]);
 
+  const containerClass = embedded ? 'command-embed' : 'page-stack g-dashboard';
+
   return (
-    <div className="page-stack g-dashboard">
-      <div className="t-page-header">
-        <div>
-          <span className="t-eyebrow">Signals</span>
-          <h1 className="t-page-title">Trader events &amp; audit log</h1>
+    <div className={containerClass}>
+      {!embedded && (
+        <div className="t-page-header">
+          <div>
+            <span className="t-eyebrow">Signals</span>
+            <h1 className="t-page-title">Trader events &amp; audit log</h1>
+          </div>
+          <span className="t-page-count">{timeline.length} events</span>
         </div>
-        <span className="t-page-count">{timeline.length} events</span>
-      </div>
+      )}
 
       <section className="g-section">
         <div className="g-section-header">

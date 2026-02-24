@@ -42,7 +42,7 @@ function EventTypeTag({ type }) {
 }
 
 // ─── Main BTC Bot Dashboard ───────────────────────────────────────────────────
-export default function BtcBot() {
+export default function BtcBot({ embedded = false }) {
   // ── Existing state and data wiring (unchanged) ────────────────────────────────
   const [config, setConfig] = useState(DEFAULT_CONFIG);
   const [opportunities, setOpportunities] = useState([]);
@@ -92,78 +92,79 @@ export default function BtcBot() {
   const ksActive = Boolean(config.killSwitch);
   const execEnabled = Boolean(config.executionEnabled);
   const hasSupabase = Boolean(import.meta.env.VITE_SUPABASE_URL);
+  const containerClass = embedded ? 'command-embed' : 'page-stack g-dashboard';
 
   return (
-    <div className="page-stack g-dashboard">
-      {/* ── Page header ── */}
-      <div className="t-page-header">
-        <div>
-          <span className="t-eyebrow">BTC Bot v1</span>
-          <h1 className="t-page-title">Bitcoin Arbitrage Dashboard</h1>
-          <p className="g-dim" style={{ fontSize: 12, marginTop: 2 }}>
-            Dutch-book arb scanner · "Bitcoin Up or Down" markets only
-          </p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span className={`g-status-dot${ksActive ? ' g-status-halted' : ' g-status-ok'}`} />
-          <span className="t-page-count">{ksActive ? 'HALTED' : 'SCANNING'}</span>
-          <span className="g-dim" style={{ fontSize: 11 }}>Heartbeat: {formatTs(lastHeartbeat)}</span>
-        </div>
-      </div>
+    <div className={containerClass}>
+      {!embedded && (
+        <>
+          <div className="t-page-header">
+            <div>
+              <span className="t-eyebrow">BTC Bot v1</span>
+              <h1 className="t-page-title">Bitcoin Arbitrage Dashboard</h1>
+              <p className="g-dim" style={{ fontSize: 12, marginTop: 2 }}>
+                Dutch-book arb scanner · "Bitcoin Up or Down" markets only
+              </p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span className={`g-status-dot${ksActive ? ' g-status-halted' : ' g-status-ok'}`} />
+              <span className="t-page-count">{ksActive ? 'HALTED' : 'SCANNING'}</span>
+              <span className="g-dim" style={{ fontSize: 11 }}>Heartbeat: {formatTs(lastHeartbeat)}</span>
+            </div>
+          </div>
 
-      {!hasSupabase && (
-        <div className="kill-switch-banner">
-          VITE_SUPABASE_URL not set — showing defaults, not live data.
-          Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file.
-        </div>
+          {!hasSupabase && (
+            <div className="kill-switch-banner">
+              VITE_SUPABASE_URL not set — showing defaults, not live data.
+              Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file.
+            </div>
+          )}
+          {error && <div className="kill-switch-banner">Supabase error: {error}</div>}
+          {ksActive && (
+            <div className="kill-switch-banner">
+              Kill switch ACTIVE — not scanning. Edit <code>killSwitch</code> in Supabase (<code>btc_bot_config</code>) to resume.
+            </div>
+          )}
+
+          <div className="g-pnl-bar">
+            <div className="g-pnl-group">
+              <span className="g-pnl-label">Mode</span>
+              <span className={`g-pnl-val${isLive ? ' g-neg' : ' g-pos'}`} style={{ fontSize: 16 }}>{config.mode}</span>
+            </div>
+            <div className="g-pnl-group">
+              <span className="g-pnl-label">Execution</span>
+              <span className={`g-pnl-val${execEnabled ? ' g-pos' : ' g-dim'}`} style={{ fontSize: 16 }}>{execEnabled ? 'Enabled' : 'Disabled'}</span>
+            </div>
+            <div className="g-pnl-group">
+              <span className="g-pnl-label">Kill Switch</span>
+              <span className={`g-pnl-val${ksActive ? ' g-neg' : ' g-pos'}`} style={{ fontSize: 16 }}>{ksActive ? 'Active' : 'Standby'}</span>
+            </div>
+            <div className="g-pnl-divider" />
+            <div className="g-pnl-group">
+              <span className="g-pnl-label g-pnl-label--dim">Min Edge</span>
+              <span className="g-pnl-val g-pnl-val--sm">{((config.minEdge ?? 0) * 100).toFixed(2)}%</span>
+            </div>
+            <div className="g-pnl-group">
+              <span className="g-pnl-label g-pnl-label--dim">Fee Buffer</span>
+              <span className="g-pnl-val g-pnl-val--sm">{((config.feeBuffer ?? 0) * 100).toFixed(2)}%</span>
+            </div>
+            <div className="g-pnl-group">
+              <span className="g-pnl-label g-pnl-label--dim">Max USD/Trade</span>
+              <span className="g-pnl-val g-pnl-val--sm">${config.maxUsdPerTrade}</span>
+            </div>
+            <div className="g-pnl-group">
+              <span className="g-pnl-label g-pnl-label--dim">Daily Loss Cap</span>
+              <span className="g-pnl-val g-pnl-val--sm">${config.maxDailyLossUsd}</span>
+            </div>
+          </div>
+
+          <div className="t-info-strip">
+            Config is edited in Supabase (<code>btc_bot_config</code>, row id = "default"). Changes apply within ~3s.
+            Last updated: {formatTs(config.updatedAt)}
+          </div>
+        </>
       )}
-      {error && <div className="kill-switch-banner">Supabase error: {error}</div>}
-      {ksActive && (
-        <div className="kill-switch-banner">
-          Kill switch ACTIVE — not scanning. Edit <code>killSwitch</code> in Supabase (<code>btc_bot_config</code>) to resume.
-        </div>
-      )}
 
-      {/* ── Config summary bar ── */}
-      <div className="g-pnl-bar">
-        <div className="g-pnl-group">
-          <span className="g-pnl-label">Mode</span>
-          <span className={`g-pnl-val${isLive ? ' g-neg' : ' g-pos'}`} style={{ fontSize: 16 }}>{config.mode}</span>
-        </div>
-        <div className="g-pnl-group">
-          <span className="g-pnl-label">Execution</span>
-          <span className={`g-pnl-val${execEnabled ? ' g-pos' : ' g-dim'}`} style={{ fontSize: 16 }}>{execEnabled ? 'Enabled' : 'Disabled'}</span>
-        </div>
-        <div className="g-pnl-group">
-          <span className="g-pnl-label">Kill Switch</span>
-          <span className={`g-pnl-val${ksActive ? ' g-neg' : ' g-pos'}`} style={{ fontSize: 16 }}>{ksActive ? 'Active' : 'Standby'}</span>
-        </div>
-        <div className="g-pnl-divider" />
-        <div className="g-pnl-group">
-          <span className="g-pnl-label g-pnl-label--dim">Min Edge</span>
-          <span className="g-pnl-val g-pnl-val--sm">{((config.minEdge ?? 0) * 100).toFixed(2)}%</span>
-        </div>
-        <div className="g-pnl-group">
-          <span className="g-pnl-label g-pnl-label--dim">Fee Buffer</span>
-          <span className="g-pnl-val g-pnl-val--sm">{((config.feeBuffer ?? 0) * 100).toFixed(2)}%</span>
-        </div>
-        <div className="g-pnl-group">
-          <span className="g-pnl-label g-pnl-label--dim">Max USD/Trade</span>
-          <span className="g-pnl-val g-pnl-val--sm">${config.maxUsdPerTrade}</span>
-        </div>
-        <div className="g-pnl-group">
-          <span className="g-pnl-label g-pnl-label--dim">Daily Loss Cap</span>
-          <span className="g-pnl-val g-pnl-val--sm">${config.maxDailyLossUsd}</span>
-        </div>
-      </div>
-
-      {/* ── Config note ── */}
-      <div className="t-info-strip">
-        Config is edited in Supabase (<code>btc_bot_config</code>, row id = "default"). Changes apply within ~3s.
-        Last updated: {formatTs(config.updatedAt)}
-      </div>
-
-      {/* ── Two-column: Opportunities + Execution ── */}
       <div className="t-two-col">
         {/* Opportunities */}
         <section className="g-section">
@@ -235,17 +236,18 @@ export default function BtcBot() {
         </section>
       </div>
 
-      {/* ── Setup reminder ── */}
-      <section className="g-section">
-        <div className="g-section-header">
-          <h2 className="g-section-title">Setup</h2>
-        </div>
-        <p className="g-empty" style={{ paddingBottom: 20 }}>
-          Terminal: <code>cd bots/btc-bot-v1 &amp;&amp; npm install &amp;&amp; npm start</code>
-          {' '}· Run <code>npm run test:live</code> to verify creds without placing orders.
-          {' '}See <strong>bots/btc-bot-v1/README.md</strong> for full setup and Supabase SQL.
-        </p>
-      </section>
+      {!embedded && (
+        <section className="g-section">
+          <div className="g-section-header">
+            <h2 className="g-section-title">Setup</h2>
+          </div>
+          <p className="g-empty" style={{ paddingBottom: 20 }}>
+            Terminal: <code>cd bots/btc-bot-v1 &amp;&amp; npm install &amp;&amp; npm start</code>
+            {' '}· Run <code>npm run test:live</code> to verify creds without placing orders.
+            {' '}See <strong>bots/btc-bot-v1/README.md</strong> for full setup and Supabase SQL.
+          </p>
+        </section>
+      )}
     </div>
   );
 }
