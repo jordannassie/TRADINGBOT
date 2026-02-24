@@ -456,6 +456,49 @@ export default function Dashboard() {
         </section>
       </div>
 
+      <div className="execution-control">
+        <span className="strategy-label">Execution</span>
+        <div className="strategy-pill-group">
+          <button
+            type="button"
+            className={`strategy-pill${execView === 'paper' ? ' active' : ''}`}
+            onClick={() => setExecView('paper')}
+          >
+            Paper
+          </button>
+          <button
+            type="button"
+            className={`strategy-pill${execView === 'live' ? ' active' : ''}`}
+            onClick={() => setExecView('live')}
+            disabled
+          >
+            Live
+          </button>
+        </div>
+      </div>
+
+      <div className="execution-panels">
+        <section className={`strategy-panel active`}>
+          <div className="strategy-panel-header">
+            <h3>Paper Execution</h3>
+            <span className="strategy-status">Enabled</span>
+          </div>
+          <p className="strategy-panel-body">
+            Paper execution routes through the simulated copy engine. Keep the kill switch off and Paper selected to
+            continue.
+          </p>
+        </section>
+        <section className="strategy-panel disabled">
+          <div className="strategy-panel-header">
+            <h3>Live Execution</h3>
+            <span className="strategy-status">Locked</span>
+          </div>
+          <p className="strategy-panel-body">
+            LOCKED — Live is disabled in this MVP. Paper only. No live orders will be placed.
+          </p>
+        </section>
+      </div>
+
       <div className="poly-grid">
         <ProfileHeaderCard />
         <ProfitLossCard />
