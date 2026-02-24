@@ -1221,3 +1221,175 @@ th {
     padding-left: 18px;
   }
 }
+
+/* ─── BTC Bot Dashboard (/btc) ──────────────────────────────────────────────── */
+
+.btc-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.btc-badge--on {
+  background: rgba(0, 200, 120, 0.18);
+  border: 1px solid rgba(0, 200, 120, 0.5);
+  color: #00c878;
+}
+
+.btc-badge--off {
+  background: rgba(143, 60, 255, 0.18);
+  border: 1px solid rgba(143, 60, 255, 0.4);
+  color: #9b6fff;
+}
+
+.btc-badge--danger {
+  background: rgba(255, 0, 80, 0.18);
+  border: 1px solid rgba(255, 0, 80, 0.5);
+  color: #ff4466;
+}
+
+.btc-live-value {
+  color: #ff9900;
+}
+
+.btc-danger-value {
+  color: #ff4466;
+}
+
+/* Controls grid */
+.btc-controls-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.btc-control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-wrap: wrap;
+}
+
+.btc-control-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 200px;
+}
+
+.btc-control-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.btc-active-btn {
+  border-color: rgba(143, 60, 255, 0.8) !important;
+  color: #fff !important;
+  background: rgba(143, 60, 255, 0.22) !important;
+}
+
+.btc-danger-btn {
+  border-color: rgba(255, 0, 80, 0.4);
+  color: #ff8899;
+}
+
+.btc-danger-btn.btc-active-btn {
+  background: rgba(255, 0, 80, 0.18) !important;
+  border-color: rgba(255, 0, 80, 0.8) !important;
+  color: #ff4466 !important;
+}
+
+.btc-input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #fff;
+  padding: 7px 12px;
+  font-size: 14px;
+  width: 110px;
+  outline: none;
+}
+
+.btc-input:focus {
+  border-color: rgba(143, 60, 255, 0.6);
+}
+
+/* Event list */
+.btc-event-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.btc-event-header {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.btc-event-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 90px 2fr 130px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 4px;
+  border-radius: 6px;
+  font-size: 12px;
+  transition: background 0.15s;
+}
+
+.btc-event-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.btc-event-type {
+  font-weight: 700;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.btc-event-type--opportunity   { background: rgba(0, 200, 120, 0.15); color: #00c878; }
+.btc-event-type--order_submitted { background: rgba(80, 160, 255, 0.15); color: #66aaff; }
+.btc-event-type--filled         { background: rgba(0, 200, 120, 0.25); color: #00e890; }
+.btc-event-type--partial_fill_flattened { background: rgba(255, 165, 0, 0.2); color: #ffaa44; }
+.btc-event-type--skipped        { background: rgba(255, 255, 255, 0.08); color: rgba(255,255,255,0.5); }
+.btc-event-type--halt           { background: rgba(255, 0, 80, 0.2); color: #ff4466; }
+.btc-event-type--error          { background: rgba(255, 0, 80, 0.3); color: #ff2244; font-weight: 900; }
+.btc-event-type--heartbeat      { background: transparent; color: rgba(255,255,255,0.25); }
+
+.btc-event-market { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btc-event-edge { color: rgba(255,255,255,0.6); text-align: right; }
+.btc-event-msg { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btc-event-ts { color: rgba(255,255,255,0.35); text-align: right; font-size: 11px; }
+
+@media (max-width: 640px) {
+  .btc-event-row {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+  }
+  .btc-event-edge,
+  .btc-event-msg { display: none; }
+}
