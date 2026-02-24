@@ -121,15 +121,18 @@ export async function routeOrder(intent, options = {}) {
       return { success: false, error: positionError };
     }
 
+    const amountLabel = `$${Number(intent.sizeUsd ?? 0).toLocaleString(undefined, {
+      maximumFractionDigits: 2,
+    })}`;
     await logActivity(
       'ORDER_CREATED',
-      'Simulated paper order recorded.',
+      `Simulated paper order recorded (${amountLabel}).`,
       { intent, orderId },
       strategyLabel,
     );
     await logActivity(
       'POSITION_UPDATED',
-      'Simulated paper position recorded.',
+      `Simulated paper position recorded (${amountLabel}).`,
       { intent, orderId, positionId },
       strategyLabel,
     );

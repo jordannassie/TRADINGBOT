@@ -2884,6 +2884,25 @@ th {
   padding-bottom: 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
+.poly-advanced-simulate-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--poly-dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.poly-advanced-amount {
+  width: 80px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--poly-text);
+  font-size: 13px;
+  text-align: right;
+}
 .poly-advanced-simulate .poly-pill {
   width: fit-content;
 }

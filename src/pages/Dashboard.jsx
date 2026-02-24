@@ -55,6 +55,7 @@ export default function Dashboard() {
   const mountedRef = useRef(true);
   const hasSupabase = Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
   const botIsOn = !state.riskControls?.killSwitchActive;
+  const [paperAmount, setPaperAmount] = useState(2);
   const fetchPaperData = useCallback(async () => {
     if (!hasSupabase) {
       setPaperSyncing(false);
@@ -115,7 +116,7 @@ export default function Dashboard() {
     const intent = {
       marketId: 'TEST',
       side: 'YES',
-      sizeUsd: 2,
+      sizeUsd: paperAmount,
       limitPrice: 0.5,
       strategyMode: 'COPY',
       sourceRef: 'control-center-sim',
@@ -342,6 +343,17 @@ export default function Dashboard() {
         <div className="poly-advanced-panel">
           {execView === 'paper' && strategyView === 'copy' && (
             <div className="poly-advanced-simulate">
+              <label className="poly-advanced-simulate-label">
+                Paper Amount ($)
+                <input
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={paperAmount}
+                  onChange={(event) => setPaperAmount(Number(event.target.value) || 0)}
+                  className="poly-advanced-amount"
+                />
+              </label>
               <button
                 type="button"
                 className="poly-pill"
